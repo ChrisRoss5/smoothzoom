@@ -1,0 +1,89 @@
+.captions-list {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: max-content;
+  color: #aaa !important;
+  background-color: #272727 !important;
+  pointer-events: none;
+  opacity: 0;
+  transform: scale(0.9);
+  transform-origin: top left;
+  transition: transform 150ms, opacity 150ms;
+}
+.captions-list::-webkit-scrollbar {
+  width: 16px;
+}
+.captions-list::-webkit-scrollbar-thumb {
+  height: 56px;
+  border-radius: 8px;
+  border: 4px solid transparent;
+  background-clip: content-box;
+  background-color: #aaaaaa;
+}
+.captions-list > a {
+  display: block;
+  padding-top: 2px;
+  padding-bottom: 2px;
+  text-decoration: none;
+  color: inherit;
+}
+.captions-list > a:hover {
+  color: white;
+}
+.captions-list > a > img,
+.captions-list > a > span {
+  height: 12px;
+  padding-left: 5px;
+  float: right;
+}
+
+.subtitles-btn {
+  position: relative;
+  color: gray;
+  margin-left: 15px !important;
+  padding-left: 15px !important;
+  border-left: 1px solid gray !important;
+}
+.subtitles-btn .captions-list {
+  left: 20px;
+  padding: 5px 2px 5px 10px;
+  max-height: 300px;
+  overflow: auto;
+}
+.subtitles-btn:hover {
+  cursor: pointer;
+  z-index: 999999999;
+}
+.subtitles-btn:hover .captions-list {
+  pointer-events: all;
+  opacity: 1;
+  transform: none;
+}
+.subtitles-btn > img {
+  height: 20px;
+  vertical-align: middle;
+  margin: 0 10px;
+}
+
+.modified-badge {
+  position: relative;
+}
+.modified-badge:hover {
+  z-index: 999999999;
+}
+.modified-badge:hover .captions-list {
+  pointer-events: all;
+  opacity: 1;
+  transform: none;
+}
+
+.custom-badge {
+  background: linear-gradient(315deg, yellow, #ffdc00ba, yellow) !important;
+  color: #693400 !important;
+  text-transform: uppercase !important;
+}
+
+.custom-thumbnail {
+  box-shadow: 0 0 10px 0px yellow !important;
+}

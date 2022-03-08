@@ -1,0 +1,36 @@
+{
+  "manifest_version": 3,
+  "name": "SmoothZoom",
+  "version": "1.0",
+  "description": "The smoothest page zoom on the internet.",
+  "icons": {
+    "128": "img/CC-icon-128.png"
+  },
+  "author": "Kristijan Rosandić",
+  "permissions": [
+    "storage"
+  ],
+  "content_scripts": [
+    {
+      "matches": [
+        "<all_urls>"
+      ],
+      "js": [
+        "content-script.js"
+      ],
+      "css": [
+        "style.css"
+      ]
+    }
+  ],
+  "web_accessible_resources": [
+    {
+      "resources": [
+        "*.svg"
+      ],
+      "matches": [
+        "<all_urls>"
+      ]
+    }
+  ]
+}

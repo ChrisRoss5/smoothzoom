@@ -1,0 +1,11 @@
+{
+  "devDependencies": {
+    "@types/chrome": "^0.0.179",
+    "typescript": "^4.6.2"
+  },
+  "scripts": {
+    "multi-watch": "tsc -w | sass -w --no-source-map src:dist",
+    "ts-watch": "tsc -w",
+    "sass-watch": "sass -w --no-source-map src:dist"
+  }
+}
