@@ -1,13 +1,17 @@
 const doc = document.documentElement;
 doc.classList.add("smooth-zoom");
 
-let zooming = false;
+const dot = document.createElement("div");
+dot.className = "dot";
+doc.appendChild(dot);
+
+let inZoom = false;
 let zoomLevel = 0;
 let scale = 1;
-let x = 0;
-let y = 0;
+let lastZoomX = 0;
+let lastZoomY = 0;
 
-let activationKey: string;
+let activationKey: "rightClick" | "altKey" | "ctrlKey" | "shiftKey";
 let rightClickPressed = false;
 
 chrome.storage.local.get(null, (storage) => {
@@ -21,27 +25,33 @@ chrome.storage.local.get(null, (storage) => {
 
 function onWheel(e: WheelEvent) {
   if (activationKey == "rightClick" && rightClickPressed) {
-    zooming = true;
-    transform(e);
+    inZoom = true;
   }
   //(e.altKey, e.ctrlKey, e.shiftKey);
-  if (zooming) e.preventDefault();
+  if (inZoom) {
+    transform(e);
+    e.preventDefault();
+  }
 }
 
-function onMousemove(e: MouseEvent) {
-  if (!zooming || 1) return;
-  doc.style.transition = "none";
+function onMousemove(e: MouseEvent, zoomed?: boolean) {
+  if (!inZoom) return;
+  if (!zoomed) doc.style.transition = "none";
+
+  const percFromLastZoomX = e.clientX / lastZoomX;
+  const percFromLastZoomX = e.clientY / lastZoomX;
+
+
   const percFromClientLeft = (e.clientX / doc.clientWidth) * 100;
-  const percFromTop = (e.clientY / doc.clientHeight) * 100;
+  const percFromClientTop = (e.clientY / doc.clientHeight) * 100;
   const widthMultiplier = doc.clientWidth / doc.offsetWidth;
   const heightMultiplier = doc.clientHeight / doc.offsetHeight;
   const zoomDistance = getZoom(zoomLevel) - getZoom(zoomLevel - 1);
-  const mouse_x = zoomDistance * (50 - percFromClientLeft) * widthMultiplier;
-  const mouse_y = zoomDistance * (50 - percFromTop) * heightMultiplier;
-  const new_x = x + mouse_x;
-  const new_y = y + mouse_y;
+  const x = zoomDistance * (50 - percFromClientLeft) * widthMultiplier * lastZoomX;
+  const y = zoomDistance * (50 - percFromClientTop) * heightMultiplier * lastZoomX;
   console.log(x, y);
-  doc.style.transform = `scale(${scale}) translate(${new_x}%, ${new_y}%)`;
+
+  doc.style.transform = `scale(${scale}) translate(${x}%, ${y}%)`;
 }
 
 function onMousedown(e: MouseEvent) {
@@ -51,52 +61,39 @@ function onMousedown(e: MouseEvent) {
 function onMouseup(e: MouseEvent) {
   if (rightClickPressed && e.button == 2) {
     rightClickPressed = false;
-    if (zooming && activationKey == "rightClick") setTimeout(removeZoom);
+    if (inZoom && activationKey == "rightClick") setTimeout(removeZoom);
   }
 }
 
 function onContextmenu(e: Event) {
-  if (zooming) e.preventDefault();
+  if (inZoom) e.preventDefault();
 }
 
 function removeZoom() {
-  zooming = false;
+  inZoom = false;
   zoomLevel = 0;
-  x = 0;
-  y = 0;
   doc.style.transition = "transform 100ms";
   doc.style.transform = "none";
 }
 
 function transform(e: WheelEvent) {
-  zoomLevel -= Math.sign(e.deltaY) as 1 | -1;
+  const zoomType = Math.sign(e.deltaY) as 1 | -1;
+  zoomLevel -= zoomType;
   doc.style.transition = "transform 100ms";
 
   const zoom = getZoom(zoomLevel);
   console.log("Zoom: " + zoom);
   scale = 1 + zoom;
 
-  const percFromClientLeft = 0.5 - e.clientX / doc.clientWidth; // 50%
-  const percFromTop = 0.5 - e.clientY / doc.clientHeight; // 100%
-  const clientWidthPerc =
-    doc.clientWidth / (doc.offsetWidth * (1 + getZoom(zoomLevel - 1))); // 100%
-  const clientHeightPerc =
-    doc.clientHeight / (doc.offsetHeight * (1 + getZoom(zoomLevel - 1))); // 50%
+  const percFromClientLeft = 0.5 - e.clientX / doc.clientWidth;
+  const percFromClientTop = 0.5 - e.clientY / doc.clientHeight;
+  const percFromPageLeft = 0.5 - e.pageX / doc.offsetWidth;
+  const percFromPageTop = 0.5 - e.pageY / doc.offsetHeight;
 
-  const zoomDistancePerc = getZoom(zoomLevel) - getZoom(zoomLevel - 1); // 50%
-
-  //console.log("percFromClientLeft: " + percFromClientLeft);
-  console.log("percFromTop: " + percFromTop);
-  //console.log("clientWidthPerc: " + clientWidthPerc);
-  console.log("clientHeightPerc: " + clientHeightPerc);
-  console.log("zoomDistancePerc: " + zoomDistancePerc);
-
-  x += percFromClientLeft * clientWidthPerc  * 100;
-  y += ((percFromTop * clientHeightPerc) - (clientHeightPerc * zoomDistancePerc) / 2) * 100;
-
-  console.log("y: " + y);
-
-  doc.style.transform = `scale(${scale}) translate(${x}%, ${y}%)`;
+  lastZoomX = e.clientX / doc.clientWidth;
+  lastZoomY = e.clientY / doc.clientHeight;
+  doc.style.transformOrigin = `${e.pageX}px ${e.pageY}px`;
+  onMousemove(e, true);
 }
 
 function getZoom(level: number) {
