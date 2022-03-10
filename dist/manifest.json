@@ -3,9 +3,6 @@
   "name": "SmoothZoom",
   "version": "1.0",
   "description": "The smoothest page zoom on the internet.",
-  "icons": {
-    "128": "img/CC-icon-128.png"
-  },
   "author": "Kristijan Rosandić",
   "permissions": [
     "storage"
