@@ -1,18 +1,19 @@
 "use strict";
+/* https://developer.chrome.com/docs/extensions/reference/tabCapture */
+/* https://html2canvas.hertzen.com/ */
 const doc = document.documentElement;
-doc.classList.add("smooth-zoom");
-const dot = document.createElement("div");
-dot.className = "dot";
-doc.appendChild(dot);
-let inZoom = false;
-let zoomLevel = 0;
-let scale = 1;
-let lastZoomX = 0;
-let lastZoomY = 0;
+let targetEl = doc;
 let activationKey;
 let rightClickPressed = false;
-chrome.storage.local.get(null, (storage) => {
+let inZoom = false;
+let zoomLevel = 0;
+let useCanvas = false;
+let isRenderingCanvas = false;
+chrome.storage.local.get(null, (response) => {
+    const storage = response;
     activationKey = storage.activationKey || "rightClick";
+    if (storage.useCanvas)
+        chrome.runtime.sendMessage("useCanvas", () => (useCanvas = true));
     document.addEventListener("wheel", onWheel, { passive: false });
     document.addEventListener("mousemove", onMousemove);
     document.addEventListener("mousedown", onMousedown);
@@ -20,31 +21,33 @@ chrome.storage.local.get(null, (storage) => {
     document.addEventListener("contextmenu", onContextmenu);
 });
 function onWheel(e) {
-    if (activationKey == "rightClick" && rightClickPressed) {
-        inZoom = true;
-    }
-    //(e.altKey, e.ctrlKey, e.shiftKey);
-    if (inZoom) {
-        transform(e);
+    const _inZoom = (rightClickPressed && activationKey == "rightClick") ||
+        (e.altKey && activationKey == "altKey") ||
+        (e.ctrlKey && activationKey == "ctrlKey") ||
+        (e.shiftKey && activationKey == "shiftKey");
+    if (_inZoom) {
         e.preventDefault();
+        if (isRenderingCanvas)
+            return;
+        if (!inZoom && useCanvas) {
+            isRenderingCanvas = true;
+            createCanvas().then(() => {
+                isRenderingCanvas = false;
+                inZoom = true;
+                scale(e);
+            });
+        }
+        else {
+            inZoom = true;
+            scale(e);
+        }
     }
 }
 function onMousemove(e, zoomed) {
     if (!inZoom)
         return;
-    if (!zoomed)
-        doc.style.transition = "none";
-    const percFromLastZoomX = e.clientX / lastZoomX;
-    const percFromLastZoomX = e.clientY / lastZoomX;
-    const percFromClientLeft = (e.clientX / doc.clientWidth) * 100;
-    const percFromClientTop = (e.clientY / doc.clientHeight) * 100;
-    const widthMultiplier = doc.clientWidth / doc.offsetWidth;
-    const heightMultiplier = doc.clientHeight / doc.offsetHeight;
-    const zoomDistance = getZoom(zoomLevel) - getZoom(zoomLevel - 1);
-    const x = zoomDistance * (50 - percFromClientLeft) * widthMultiplier * lastZoomX;
-    const y = zoomDistance * (50 - percFromClientTop) * heightMultiplier * lastZoomX;
-    console.log(x, y);
-    doc.style.transform = `scale(${scale}) translate(${x}%, ${y}%)`;
+    targetEl.style.transition = "none";
+    transformOrigin(e);
 }
 function onMousedown(e) {
     if (e.button == 2)
@@ -61,30 +64,42 @@ function onContextmenu(e) {
     if (inZoom)
         e.preventDefault();
 }
+function scale(e) {
+    zoomLevel = Math.max(0, zoomLevel - Math.sign(e.deltaY));
+    targetEl.style.transition = "transform 100ms";
+    targetEl.style.transform = `scale(${1 + zoomLevel})`;
+    transformOrigin(e);
+}
+function transformOrigin(e) {
+    const [x, y] = useCanvas ? [e.clientX, e.clientY] : [e.pageX, e.pageY];
+    targetEl.style.transformOrigin = `${x}px ${y}px`;
+}
 function removeZoom() {
     inZoom = false;
     zoomLevel = 0;
-    doc.style.transition = "transform 100ms";
-    doc.style.transform = "none";
+    targetEl.style.transition = "transform 100ms";
+    targetEl.style.transform = "none";
+    if (!useCanvas)
+        return;
+    setTimeout(() => {
+        targetEl.remove();
+        targetEl = doc;
+    }, 100);
 }
-function transform(e) {
-    const zoomType = Math.sign(e.deltaY);
-    zoomLevel -= zoomType;
-    doc.style.transition = "transform 100ms";
-    const zoom = getZoom(zoomLevel);
-    console.log("Zoom: " + zoom);
-    scale = 1 + zoom;
-    const percFromClientLeft = 0.5 - e.clientX / doc.clientWidth;
-    const percFromClientTop = 0.5 - e.clientY / doc.clientHeight;
-    const percFromPageLeft = 0.5 - e.pageX / doc.offsetWidth;
-    const percFromPageTop = 0.5 - e.pageY / doc.offsetHeight;
-    lastZoomX = e.clientX / doc.clientWidth;
-    lastZoomY = e.clientY / doc.clientHeight;
-    doc.style.transformOrigin = `${e.pageX}px ${e.pageY}px`;
-    onMousemove(e, true);
-}
-function getZoom(level) {
-    if (!level)
-        return 0;
-    return Math.max(0.5, /* Math.sqrt(level * 10) / 5 */ level / 2);
+function createCanvas() {
+    return new Promise((resolve) => {
+        window
+            .html2canvas(doc, {
+            x: window.scrollX,
+            y: window.scrollY,
+            width: window.innerWidth,
+            height: window.innerHeight,
+        })
+            .then((canvas) => {
+            targetEl = doc.appendChild(canvas);
+            targetEl.className = "zoom-canvas";
+            targetEl.offsetHeight; // NOSONAR -> reflow for transition
+            resolve();
+        });
+    });
 }

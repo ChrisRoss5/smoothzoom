@@ -1,19 +1,8 @@
-.smooth-zoom {
- /*  transform-origin: top left !important; */
-  /* transition: transform 80ms; */
-}
-
-html {
-  position: relative;
-}
-
-.dot {
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  width: 10px;
-  height: 10px;
-  border-radius: 5px;
-  background: red;
+.zoom-canvas {
+  position: fixed !important;
+  top: 0 !important;
+  left: 0 !important;
+  z-index: 9999999999999999999 !important;
+  border: 5px solid red;
+  box-shadow: 5px 5px red;
 }
