@@ -1,11 +1,16 @@
-$blue: #5b9bd5;
-$main-color: #595959;
+$title-bg: #e5ebf7;
+/* #0070c0; */
+/* #1F4788; */
+/* #5b9bd5; */
+$main-text: #595959;
+$white-text: #707070;
+$shadow: rgba($main-text, 0.75);
 
 body {
   margin: 0;
   padding: 0;
   width: 300px;
-  color: $main-color;
+  color: $main-text;
   font-size: 20px;
   font-family: Ubuntu, Arial, Helvetica, sans-serif;
   background-image: url("../img/circles.png");
@@ -28,7 +33,7 @@ label {
     cursor: pointer;
 
     input::after {
-      box-shadow: 0 0 13px 0 $blue;
+      box-shadow: 0 0 13px 0 $shadow;
     }
   }
 
@@ -50,7 +55,7 @@ label {
 
 .line {
   width: 30%;
-  border-top: 1px solid $blue;
+  border-top: 1px solid rgba($main-text, 0.4);
   margin: 10px auto;
 }
 
@@ -72,8 +77,8 @@ label {
   width: 100%;
   height: 100%;
   padding: 0 10px;
-  background: $blue;
-  color: white;
+  background: $title-bg;
+  color: $white-text;
   font-size: 14px;
   transform: translateX(calc(100% + 15px));
   transition: transform 350ms;
@@ -90,8 +95,8 @@ label {
     text-align: center;
     font-weight: bold;
     border-radius: 9px 0 0 9px;
-    background: $blue;
-    box-shadow: 0 0 10px $blue;
+    background: $title-bg;
+    box-shadow: 0 0 10px $shadow;
 
   }
 
@@ -151,12 +156,14 @@ label {
 }
 
 #review {
-  color: white;
-  background: $blue;
-  box-shadow: 0 0 10px $blue;
+  color: $white-text;
+  background: linear-gradient(45deg, white, $title-bg);
+  box-shadow: 0 0 10px $shadow;
   padding: 10px 15px;
+  font-style: italic;
 
   img {
     width: 20px;
+    filter: drop-shadow(0 0 7px $shadow);
   }
 }

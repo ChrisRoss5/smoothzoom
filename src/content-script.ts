@@ -10,28 +10,39 @@ const doc = document.documentElement;
 let targetEl = doc;
 let storage: ChromeStorage = {
   activationKey: "rightClick",
-  usePointerEvents: true,
-  useDoubleClick: false,
+  websiteInteractivity: true,
+  holdToZoom: true,
   useCanvas: false,
   strength: 1,
 } as DefaultStorage;
 let rightClickPressed = false;
+let isDoubleClick = false;
 let inZoom = false;
 let zoomLevel = 0;
-let useCanvas = false;
+let canvasLoaded = false;
 let isRenderingCanvas = false;
 
-chrome.storage.local.get(null, (response) => {
+chrome.storage.sync.get(null, (response) => {
   storage = { ...storage, ...(response as ChromeStorage) };
 
   if (storage.useCanvas)
-    chrome.runtime.sendMessage("useCanvas", () => (useCanvas = true));
+    chrome.runtime.sendMessage("useCanvas", () => (canvasLoaded = true));
 
   document.addEventListener("wheel", onWheel, { passive: false });
   document.addEventListener("mousemove", onMousemove);
   document.addEventListener("mousedown", onMousedown);
   document.addEventListener("mouseup", onMouseup);
   document.addEventListener("contextmenu", onContextmenu);
+  document.addEventListener("keyup", onKeyup);
+});
+
+chrome.storage.onChanged.addListener((changes) => {
+  for (const key of Object.keys(changes))
+    updateStorage(key as keyof ChromeStorage, changes[key].newValue);
+  console.log(JSON.stringify(storage, null, 4));
+
+  if (storage.useCanvas && !canvasLoaded)
+    chrome.runtime.sendMessage("useCanvas", () => (canvasLoaded = true));
 });
 
 async function onWheel(e: WheelEvent) {
@@ -44,11 +55,13 @@ async function onWheel(e: WheelEvent) {
   if (_inZoom) {
     e.preventDefault();
     if (isRenderingCanvas) return;
-    if (!inZoom && useCanvas) {
+    if (!inZoom && storage.useCanvas && canvasLoaded) {
       isRenderingCanvas = true;
       await createCanvas();
       isRenderingCanvas = false;
     }
+    if (!storage.websiteInteractivity)
+      setStyleProperty("pointer-events", "none");
     inZoom = true;
     scale(e);
   }
@@ -56,7 +69,7 @@ async function onWheel(e: WheelEvent) {
 
 function onMousemove(e: MouseEvent) {
   if (!inZoom) return;
-  targetEl.style.transition = "none";
+  setStyleProperty("transition", "none");
   transformOrigin(e);
 }
 
@@ -67,6 +80,8 @@ function onMousedown(e: MouseEvent) {
 function onMouseup(e: MouseEvent) {
   if (rightClickPressed && e.button == 2) {
     rightClickPressed = false;
+
+    // Using setTimeout to allow onContextmenu() before inZoom == false;
     if (inZoom && storage.activationKey == "rightClick") setTimeout(removeZoom);
   }
 }
@@ -75,24 +90,44 @@ function onContextmenu(e: Event) {
   if (inZoom) e.preventDefault();
 }
 
+function onKeyup(e: KeyboardEvent) {
+  if (!inZoom) return;
+  if (
+    (e.key == "Alt" && storage.activationKey == "altKey") ||
+    (e.key == "Control" && storage.activationKey == "ctrlKey") ||
+    (e.key == "Shift" && storage.activationKey == "shiftKey")
+  )
+    removeZoom();
+}
+
 function scale(e: WheelEvent) {
-  zoomLevel = Math.max(0, zoomLevel - Math.sign(e.deltaY) * storage.strength);
-  targetEl.style.transition = "transform 100ms";
-  targetEl.style.transform = `scale(${1 + zoomLevel})`;
+  const zoom = Math.sign(e.deltaY) * getStrength(storage.strength);
+  zoomLevel = Math.max(-0.75, zoomLevel - zoom);
+  setStyleProperty("transition", "transform 100ms");
+  setStyleProperty("transform", `scale(${1 + zoomLevel})`);
   transformOrigin(e);
 }
 
 function transformOrigin(e: MouseEvent) {
-  const [x, y] = useCanvas ? [e.clientX, e.clientY] : [e.pageX, e.pageY];
-  targetEl.style.transformOrigin = `${x}px ${y}px`;
+  const [x, y] =
+    storage.useCanvas && canvasLoaded
+      ? [e.clientX, e.clientY]
+      : [e.pageX, e.pageY];
+  setStyleProperty("transform-origin", `${x}px ${y}px`);
 }
 
 function removeZoom() {
+  if (!storage.holdToZoom && !isDoubleClick) {
+    isDoubleClick = true;
+    return;
+  }
+  isDoubleClick = false;
   inZoom = false;
   zoomLevel = 0;
-  targetEl.style.transition = "transform 100ms";
-  targetEl.style.transform = "none";
-  if (!useCanvas) return;
+  setStyleProperty("transition", "transform 100ms");
+  setStyleProperty("transform", "none");
+  if (!storage.websiteInteractivity) setStyleProperty("pointer-events", "auto");
+  if (targetEl.className != "zoom-canvas") return;
   setTimeout(() => {
     targetEl.remove();
     targetEl = doc;
@@ -115,4 +150,22 @@ function createCanvas() {
         resolve();
       });
   });
+}
+
+/* Utils */
+
+function setStyleProperty(key: string, value: string) {
+  targetEl.style.setProperty(key, value, "important");
+}
+
+function updateStorage<Key extends keyof ChromeStorage>(
+  key: Key,
+  value: ChromeStorage[Key]
+) {
+  storage[key] = value;
+}
+
+function getStrength(percentage: number) {
+  if (percentage < 0.5) return 0.25 + 1.5 * percentage;
+  return 1 + 6 * (percentage - 0.5);
 }

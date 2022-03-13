@@ -1,3 +1,6 @@
+/* #0070c0; */
+/* #1F4788; */
+/* #5b9bd5; */
 body {
   margin: 0;
   padding: 0;
@@ -25,7 +28,7 @@ label:hover {
   cursor: pointer;
 }
 label:hover input::after {
-  box-shadow: 0 0 13px 0 #5b9bd5;
+  box-shadow: 0 0 13px 0 rgba(89, 89, 89, 0.75);
 }
 label input {
   width: 18px;
@@ -43,7 +46,7 @@ label input:not([type=range])::after {
 
 .line {
   width: 30%;
-  border-top: 1px solid #5b9bd5;
+  border-top: 1px solid rgba(89, 89, 89, 0.4);
   margin: 10px auto;
 }
 
@@ -64,8 +67,8 @@ label input:not([type=range])::after {
   width: 100%;
   height: 100%;
   padding: 0 10px;
-  background: #5b9bd5;
-  color: white;
+  background: #e5ebf7;
+  color: #707070;
   font-size: 14px;
   transform: translateX(calc(100% + 15px));
   transition: transform 350ms;
@@ -82,8 +85,8 @@ label input:not([type=range])::after {
   text-align: center;
   font-weight: bold;
   border-radius: 9px 0 0 9px;
-  background: #5b9bd5;
-  box-shadow: 0 0 10px #5b9bd5;
+  background: #e5ebf7;
+  box-shadow: 0 0 10px rgba(89, 89, 89, 0.75);
 }
 .info:hover {
   transform: translateX(15px);
@@ -136,11 +139,13 @@ label input:not([type=range])::after {
 }
 
 #review {
-  color: white;
-  background: #5b9bd5;
-  box-shadow: 0 0 10px #5b9bd5;
+  color: #707070;
+  background: linear-gradient(45deg, white, #e5ebf7);
+  box-shadow: 0 0 10px rgba(89, 89, 89, 0.75);
   padding: 10px 15px;
+  font-style: italic;
 }
 #review img {
   width: 20px;
+  filter: drop-shadow(0 0 7px rgba(89, 89, 89, 0.75));
 }

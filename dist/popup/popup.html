@@ -9,7 +9,7 @@
   </head>
   <body>
     <a id="title" class="bright">
-      <img src="../img/smooth-zoom.png" />
+      <img src="../img/smooth-zoom-4.png" />
     </a>
 
     <div id="content">
@@ -31,8 +31,8 @@
           Shift
         </label>
         <div class="info">
-          Choose a key, hold it and use mousewheel to zoom. Default: Right Mouse
-          Click (RClick)
+          Choose a key, hold it, and use mousewheel to zoom. Default: Right
+          Mouse Click (RClick)
         </div>
       </div>
 
@@ -40,20 +40,20 @@
 
       <div id="options">
         <label>
-          Use pointer events:
-          <input type="checkbox" key="usePointerEvents" />
+          Website interactivity:
+          <input type="checkbox" key="websiteInteractivity" />
           <div class="info">Enables website interactivity while in zoom.</div>
         </label>
         <label>
-          Use double click:
-          <input type="checkbox" key="useDoubleClick" />
+          Hold to zoom:
+          <input type="checkbox" key="holdToZoom" />
           <div class="info">
-            Press the key twice rather than holding one. Example: RClick + wheel
-            + release + RClick
+            Exits zoom when the chosen key is released. When disabled, use the
+            same key again.
           </div>
         </label>
         <label>
-          Use canvas:
+          Use screenshot:
           <input type="checkbox" key="useCanvas" />
           <div class="info">
             Takes a screenshot of a website, moment before it starts zooming
@@ -68,9 +68,9 @@
         Strength:
         <input
           type="range"
-          min="0.25"
-          max="4"
-          value="1"
+          min="0"
+          max="1"
+          value="0.5"
           step="any"
           key="strength"
         />

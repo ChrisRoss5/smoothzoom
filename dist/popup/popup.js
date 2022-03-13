@@ -1,37 +1,44 @@
 "use strict";
-let _storage = {
-    activationKey: "rightClick",
-    usePointerEvents: true,
-    useDoubleClick: false,
-    useCanvas: false,
-    strength: 1,
-};
-chrome.storage.local.get(null, (response) => {
-    _storage = Object.assign(Object.assign({}, _storage), response);
-    const strengthValueEl = document.querySelector("#strength-value");
-    for (const input of document.querySelectorAll("input")) {
-        const key = input.getAttribute("key");
-        if (key == _storage.activationKey ||
-            _storage[key] === true) {
-            input.checked = true;
-        }
-        else if (key == "strength") {
-            input.value = strengthValueEl.textContent = _storage.strength
-                .toFixed(2)
-                .toString();
-        }
-        input.onclick = (e) => {
-            if (e.type == "radio") {
-                chrome.storage.local.set({ activationKey: key });
+(() => {
+    let storage = {
+        activationKey: "rightClick",
+        websiteInteractivity: true,
+        holdToZoom: true,
+        useCanvas: false,
+        strength: 1,
+    };
+    chrome.storage.sync.get(null, (response) => {
+        storage = Object.assign(Object.assign({}, storage), response);
+        const strengthValueEl = document.querySelector("#strength-value");
+        for (const input of document.querySelectorAll("input")) {
+            const key = input.getAttribute("key");
+            if (key == storage.activationKey ||
+                storage[key] === true) {
+                input.checked = true;
             }
             else if (key == "strength") {
-                const strength = parseFloat(input.value).toFixed(2);
-                chrome.storage.local.set({ strength });
-                strengthValueEl.textContent = strength;
+                const strength = (storage.strength || 1);
+                input.value = strength.toFixed(2);
+                strengthValueEl.textContent = getStrength(strength).toFixed(2);
             }
-            else {
-                chrome.storage.local.set({ [key]: input.checked });
-            }
-        };
+            input.onclick = () => {
+                if (input.type == "radio") {
+                    chrome.storage.sync.set({ activationKey: key });
+                }
+                else if (key == "strength") {
+                    const strength = parseFloat(input.value);
+                    chrome.storage.sync.set({ strength });
+                    strengthValueEl.textContent = getStrength(strength).toFixed(2);
+                }
+                else {
+                    chrome.storage.sync.set({ [key]: input.checked });
+                }
+            };
+        }
+    });
+    function getStrength(percentage) {
+        if (percentage < 0.5)
+            return 0.25 + 1.5 * percentage;
+        return 1 + 6 * (percentage - 0.5);
     }
-});
+})();
