@@ -1,1 +1,146 @@
+body {
+  margin: 0;
+  padding: 0;
+  width: 300px;
+  color: #595959;
+  font-size: 20px;
+  font-family: Ubuntu, Arial, Helvetica, sans-serif;
+  background-image: url("../img/circles.png");
+  background-size: cover;
+  background-color: rgba(255, 255, 255, 0.6);
+  background-blend-mode: lighten;
+  background-repeat: no-repeat;
+}
 
+a {
+  display: block;
+  text-decoration: none;
+  text-align: center;
+}
+
+label {
+  position: relative;
+}
+label:hover {
+  cursor: pointer;
+}
+label:hover input::after {
+  box-shadow: 0 0 13px 0 #5b9bd5;
+}
+label input {
+  width: 18px;
+  height: 18px;
+  cursor: pointer;
+}
+label input:not([type=range])::after {
+  content: "";
+  position: absolute;
+  width: 18px;
+  height: 18px;
+  border-radius: 9px;
+  transition: box-shadow 150ms;
+}
+
+.line {
+  width: 30%;
+  border-top: 1px solid #5b9bd5;
+  margin: 10px auto;
+}
+
+.bright {
+  transition: filter 150ms;
+}
+.bright:hover {
+  filter: brightness(1.1);
+  cursor: pointer;
+}
+
+.info {
+  position: absolute;
+  display: flex;
+  align-items: center;
+  top: 0;
+  right: 0;
+  width: 100%;
+  height: 100%;
+  padding: 0 10px;
+  background: #5b9bd5;
+  color: white;
+  font-size: 14px;
+  transform: translateX(calc(100% + 15px));
+  transition: transform 350ms;
+}
+.info::before {
+  content: "?";
+  position: absolute;
+  left: -17px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 18px;
+  height: 30px;
+  line-height: 30px;
+  text-align: center;
+  font-weight: bold;
+  border-radius: 9px 0 0 9px;
+  background: #5b9bd5;
+  box-shadow: 0 0 10px #5b9bd5;
+}
+.info:hover {
+  transform: translateX(15px);
+}
+
+/* specific */
+#title {
+  margin: 5px auto 0;
+}
+#title img {
+  width: 90%;
+}
+
+#content {
+  margin: 15px 15px 15px 0;
+}
+
+#keys {
+  position: relative;
+  display: flex;
+  font-size: 16px;
+  margin-bottom: 15px;
+  padding: 0 5px;
+}
+#keys label {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+#keys input {
+  margin-bottom: 3px;
+}
+
+#options label,
+#strength {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 15px;
+}
+
+#strength input {
+  flex: 1;
+  margin-left: 20px;
+}
+
+#strength-value {
+  flex: 1 1 40%;
+}
+
+#review {
+  color: white;
+  background: #5b9bd5;
+  box-shadow: 0 0 10px #5b9bd5;
+  padding: 10px 15px;
+}
+#review img {
+  width: 20px;
+}

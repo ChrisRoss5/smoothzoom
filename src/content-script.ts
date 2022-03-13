@@ -6,15 +6,15 @@
 //   console.log(callback);
 // });
 
-type ActivationKey = "rightClick" | "altKey" | "ctrlKey" | "shiftKey";
-interface ChromeStorage {
-  activationKey: ActivationKey;
-  useCanvas: boolean;
-}
-
 const doc = document.documentElement;
 let targetEl = doc;
-let activationKey: ActivationKey;
+let storage: ChromeStorage = {
+  activationKey: "rightClick",
+  usePointerEvents: true,
+  useDoubleClick: false,
+  useCanvas: false,
+  strength: 1,
+} as DefaultStorage;
 let rightClickPressed = false;
 let inZoom = false;
 let zoomLevel = 0;
@@ -22,8 +22,7 @@ let useCanvas = false;
 let isRenderingCanvas = false;
 
 chrome.storage.local.get(null, (response) => {
-  const storage = response as ChromeStorage;
-  activationKey = storage.activationKey || "rightClick";
+  storage = { ...storage, ...(response as ChromeStorage) };
 
   if (storage.useCanvas)
     chrome.runtime.sendMessage("useCanvas", () => (useCanvas = true));
@@ -35,31 +34,27 @@ chrome.storage.local.get(null, (response) => {
   document.addEventListener("contextmenu", onContextmenu);
 });
 
-function onWheel(e: WheelEvent) {
+async function onWheel(e: WheelEvent) {
   const _inZoom =
-    (rightClickPressed && activationKey == "rightClick") ||
-    (e.altKey && activationKey == "altKey") ||
-    (e.ctrlKey && activationKey == "ctrlKey") ||
-    (e.shiftKey && activationKey == "shiftKey");
+    (rightClickPressed && storage.activationKey == "rightClick") ||
+    (e.altKey && storage.activationKey == "altKey") ||
+    (e.ctrlKey && storage.activationKey == "ctrlKey") ||
+    (e.shiftKey && storage.activationKey == "shiftKey");
 
   if (_inZoom) {
     e.preventDefault();
     if (isRenderingCanvas) return;
     if (!inZoom && useCanvas) {
       isRenderingCanvas = true;
-      createCanvas().then(() => {
-        isRenderingCanvas = false;
-        inZoom = true;
-        scale(e);
-      });
-    } else {
-      inZoom = true;
-      scale(e);
+      await createCanvas();
+      isRenderingCanvas = false;
     }
+    inZoom = true;
+    scale(e);
   }
 }
 
-function onMousemove(e: MouseEvent, zoomed?: boolean) {
+function onMousemove(e: MouseEvent) {
   if (!inZoom) return;
   targetEl.style.transition = "none";
   transformOrigin(e);
@@ -72,7 +67,7 @@ function onMousedown(e: MouseEvent) {
 function onMouseup(e: MouseEvent) {
   if (rightClickPressed && e.button == 2) {
     rightClickPressed = false;
-    if (inZoom && activationKey == "rightClick") setTimeout(removeZoom);
+    if (inZoom && storage.activationKey == "rightClick") setTimeout(removeZoom);
   }
 }
 
@@ -81,7 +76,7 @@ function onContextmenu(e: Event) {
 }
 
 function scale(e: WheelEvent) {
-  zoomLevel = Math.max(0, zoomLevel - Math.sign(e.deltaY));
+  zoomLevel = Math.max(0, zoomLevel - Math.sign(e.deltaY) * storage.strength);
   targetEl.style.transition = "transform 100ms";
   targetEl.style.transform = `scale(${1 + zoomLevel})`;
   transformOrigin(e);

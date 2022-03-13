@@ -4,9 +4,89 @@
     <meta charset="UTF-8" />
     <meta http-equiv="X-UA-Compatible" content="IE=edge" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="stylesheet" href="popup.css" />
     <title>SmoothZoom</title>
   </head>
   <body>
-    <div>SmoothZoom</div>
+    <a id="title" class="bright">
+      <img src="../img/smooth-zoom.png" />
+    </a>
+
+    <div id="content">
+      <div id="keys">
+        <label>
+          <input type="radio" name="key" key="rightClick" />
+          RClick
+        </label>
+        <label>
+          <input type="radio" name="key" key="altKey" />
+          Alt
+        </label>
+        <label>
+          <input type="radio" name="key" key="ctrlKey" />
+          Ctrl
+        </label>
+        <label>
+          <input type="radio" name="key" key="shiftKey" />
+          Shift
+        </label>
+        <div class="info">
+          Choose a key, hold it and use mousewheel to zoom. Default: Right Mouse
+          Click (RClick)
+        </div>
+      </div>
+
+      <div class="line"></div>
+
+      <div id="options">
+        <label>
+          Use pointer events:
+          <input type="checkbox" key="usePointerEvents" />
+          <div class="info">Enables website interactivity while in zoom.</div>
+        </label>
+        <label>
+          Use double click:
+          <input type="checkbox" key="useDoubleClick" />
+          <div class="info">
+            Press the key twice rather than holding one. Example: RClick + wheel
+            + release + RClick
+          </div>
+        </label>
+        <label>
+          Use canvas:
+          <input type="checkbox" key="useCanvas" />
+          <div class="info">
+            Takes a screenshot of a website, moment before it starts zooming
+            into it.
+          </div>
+        </label>
+      </div>
+
+      <div class="line"></div>
+
+      <label id="strength">
+        Strength:
+        <input
+          type="range"
+          min="0.25"
+          max="4"
+          value="1"
+          step="any"
+          key="strength"
+        />
+        <div class="info">
+          Current multiplier:
+          <div id="strength-value">1.00</div>
+          Minimum: 0.25 Maximum: 4
+        </div>
+      </label>
+    </div>
+
+    <a id="review" class="row bright">
+      <img src="../img/cws-logo.png" />
+      &nbsp;Write a review&nbsp;&nbsp;★★★★★
+    </a>
+
+    <script src="popup.js"></script>
   </body>
 </html>
