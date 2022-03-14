@@ -8,7 +8,12 @@
     <title>SmoothZoom</title>
   </head>
   <body>
-    <a id="title" class="bright">
+    <a
+      id="title"
+      class="bright"
+      href="https://github.com/ChrisRoss5/SmoothZoom"
+      target="_blank"
+    >
       <img src="../img/smooth-zoom-4.png" />
     </a>
 
@@ -54,7 +59,7 @@
         </label>
         <label>
           Use screenshot:
-          <input type="checkbox" key="useCanvas" />
+          <input type="checkbox" key="useScreenshot" />
           <div class="info">
             Takes a screenshot of a website, moment before it starts zooming
             into it.
@@ -65,7 +70,7 @@
       <div class="line"></div>
 
       <label id="strength">
-        Strength:
+        <div>Strength:</div>
         <input
           type="range"
           min="0"
@@ -80,9 +85,26 @@
           Minimum: 0.25 Maximum: 4
         </div>
       </label>
+
+      <label id="transition">
+        <div>Transition:</div>
+        <input
+          type="range"
+          min="0"
+          max="400"
+          value="200"
+          step="any"
+          key="transition"
+        />
+        <div class="info">
+          Current duration:
+          <div id="transition-value">200ms</div>
+          Minimum: 0 Maximum: 400
+        </div>
+      </label>
     </div>
 
-    <a id="review" class="row bright">
+    <a id="review" class="row bright" target="_blank">
       <img src="../img/cws-logo.png" />
       &nbsp;Write a review&nbsp;&nbsp;★★★★★
     </a>

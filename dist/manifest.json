@@ -5,14 +5,18 @@
   "description": "The smoothest page zoom on the internet.",
   "author": "Kristijan Rosandić",
   "permissions": [
-    "storage",
-    "scripting"
+    "storage"
   ],
   "host_permissions": [
     "<all_urls>"
   ],
   "action": {
     "default_popup": "popup/popup.html"
+  },
+  "icons": {
+    "16": "img/icon.png",
+    "48": "img/icon.png",
+    "128": "img/icon.png"
   },
   "background": {
     "service_worker": "service-worker.js"
@@ -26,7 +30,7 @@
         "content-script.js"
       ],
       "css": [
-        "style.css"
+        "screenshot.css"
       ],
       "all_frames": true
     }

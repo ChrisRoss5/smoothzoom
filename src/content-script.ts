@@ -1,33 +1,23 @@
-/* https://developer.chrome.com/docs/extensions/reference/tabCapture */
-/* https://html2canvas.hertzen.com/ */
-
-// TABCAPTURE IS BROKEN -- using html2canvas as alternative
-// chrome.tabCapture.capture({ audio: false, video: false }, (callback) => {
-//   console.log(callback);
-// });
-
 const doc = document.documentElement;
 let targetEl = doc;
+
 let storage: ChromeStorage = {
   activationKey: "rightClick",
   websiteInteractivity: true,
   holdToZoom: true,
-  useCanvas: false,
+  useScreenshot: false,
   strength: 1,
-} as DefaultStorage;
+  transition: 200
+};
+
 let rightClickPressed = false;
 let isDoubleClick = false;
 let inZoom = false;
 let zoomLevel = 0;
-let canvasLoaded = false;
-let isRenderingCanvas = false;
+let isCreatingScreenshot = false;
 
 chrome.storage.sync.get(null, (response) => {
   storage = { ...storage, ...(response as ChromeStorage) };
-
-  if (storage.useCanvas)
-    chrome.runtime.sendMessage("useCanvas", () => (canvasLoaded = true));
-
   document.addEventListener("wheel", onWheel, { passive: false });
   document.addEventListener("mousemove", onMousemove);
   document.addEventListener("mousedown", onMousedown);
@@ -39,26 +29,24 @@ chrome.storage.sync.get(null, (response) => {
 chrome.storage.onChanged.addListener((changes) => {
   for (const key of Object.keys(changes))
     updateStorage(key as keyof ChromeStorage, changes[key].newValue);
-  console.log(JSON.stringify(storage, null, 4));
-
-  if (storage.useCanvas && !canvasLoaded)
-    chrome.runtime.sendMessage("useCanvas", () => (canvasLoaded = true));
 });
 
+/* Functions */
+
 async function onWheel(e: WheelEvent) {
-  const _inZoom =
+  const zoomReady =
     (rightClickPressed && storage.activationKey == "rightClick") ||
     (e.altKey && storage.activationKey == "altKey") ||
     (e.ctrlKey && storage.activationKey == "ctrlKey") ||
     (e.shiftKey && storage.activationKey == "shiftKey");
 
-  if (_inZoom) {
+  if (zoomReady || inZoom) {
     e.preventDefault();
-    if (isRenderingCanvas) return;
-    if (!inZoom && storage.useCanvas && canvasLoaded) {
-      isRenderingCanvas = true;
-      await createCanvas();
-      isRenderingCanvas = false;
+    if (isCreatingScreenshot) return;
+    if (!inZoom && storage.useScreenshot) {
+      isCreatingScreenshot = true;
+      await createScreenshot();
+      isCreatingScreenshot = false;
     }
     if (!storage.websiteInteractivity)
       setStyleProperty("pointer-events", "none");
@@ -101,18 +89,22 @@ function onKeyup(e: KeyboardEvent) {
 }
 
 function scale(e: WheelEvent) {
-  const zoom = Math.sign(e.deltaY) * getStrength(storage.strength);
-  zoomLevel = Math.max(-0.75, zoomLevel - zoom);
-  setStyleProperty("transition", "transform 100ms");
+  const zoomType = -Math.sign(e.deltaY) as -1 | 1;
+  zoomLevel = Math.max(
+    -0.75,
+    zoomLevel +
+      (zoomType * getStrength(storage.strength)) /
+        ((!zoomLevel && zoomType == -1) || zoomLevel < 0 ? 4 : 1)
+  );
+  setStyleProperty("transition", `transform ${storage.transition}ms`);
   setStyleProperty("transform", `scale(${1 + zoomLevel})`);
   transformOrigin(e);
 }
 
 function transformOrigin(e: MouseEvent) {
-  const [x, y] =
-    storage.useCanvas && canvasLoaded
-      ? [e.clientX, e.clientY]
-      : [e.pageX, e.pageY];
+  const [x, y] = storage.useScreenshot
+    ? [e.clientX, e.clientY]
+    : [e.pageX, e.pageY];
   setStyleProperty("transform-origin", `${x}px ${y}px`);
 }
 
@@ -124,31 +116,25 @@ function removeZoom() {
   isDoubleClick = false;
   inZoom = false;
   zoomLevel = 0;
-  setStyleProperty("transition", "transform 100ms");
+  setStyleProperty("transition", `transform ${storage.transition}ms`);
   setStyleProperty("transform", "none");
   if (!storage.websiteInteractivity) setStyleProperty("pointer-events", "auto");
-  if (targetEl.className != "zoom-canvas") return;
+  if (targetEl.id != "zoom-screenshot") return;
   setTimeout(() => {
     targetEl.remove();
     targetEl = doc;
   }, 100);
 }
 
-function createCanvas() {
-  return new Promise<void>((resolve) => {
-    (window as any)
-      .html2canvas(doc, {
-        x: window.scrollX,
-        y: window.scrollY,
-        width: window.innerWidth,
-        height: window.innerHeight,
-      })
-      .then((canvas: HTMLCanvasElement) => {
-        targetEl = doc.appendChild(canvas);
-        targetEl.className = "zoom-canvas";
-        targetEl.offsetHeight; // NOSONAR -> reflow for transition
-        resolve();
-      });
+function createScreenshot() {
+  return new Promise((resolve) => {
+    chrome.runtime.sendMessage("TAKE_SCREENSHOT", (dataUrl: string) => {
+      const img = document.createElement("img");
+      targetEl = doc.appendChild(img);
+      targetEl.id = "zoom-screenshot";
+      img.onload = resolve;
+      img.src = dataUrl;
+    });
   });
 }
 

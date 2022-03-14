@@ -1,11 +1,7 @@
 "use strict";
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
-    /* https://developer.chrome.com/docs/extensions/reference/scripting */
-    if (request == "useCanvas") {
-        const target = { tabId: sender.tab.id, allFrames: true };
-        const [canvasJS, canvasCSS] = ["html2canvas.min.js", "canvas.css"];
-        chrome.scripting.executeScript({ target, files: [canvasJS] }, sendResponse);
-        chrome.scripting.insertCSS({ target, files: [canvasCSS] });
-    }
+    /* https://developer.chrome.com/docs/extensions/reference/tabs/#method-captureVisibleTab */
+    if (request == "TAKE_SCREENSHOT")
+        chrome.tabs.captureVisibleTab(-2, { quality: 100 }, sendResponse);
     return true;
 });

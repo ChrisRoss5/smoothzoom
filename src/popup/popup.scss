@@ -3,8 +3,8 @@ $title-bg: #e5ebf7;
 /* #1F4788; */
 /* #5b9bd5; */
 $main-text: #595959;
-$white-text: #707070;
-$shadow: rgba($main-text, 0.75);
+$brighter-text: #707070;
+$shadow: #97a6c4;
 
 body {
   margin: 0;
@@ -78,8 +78,9 @@ label {
   height: 100%;
   padding: 0 10px;
   background: $title-bg;
-  color: $white-text;
+  color: $brighter-text;
   font-size: 14px;
+  box-shadow: 0 0 10px $shadow;
   transform: translateX(calc(100% + 15px));
   transition: transform 350ms;
 
@@ -97,7 +98,6 @@ label {
     border-radius: 9px 0 0 9px;
     background: $title-bg;
     box-shadow: 0 0 10px $shadow;
-
   }
 
   &:hover {
@@ -139,24 +139,33 @@ label {
 }
 
 #options label,
-#strength {
+#strength,
+#transition {
   display: flex;
   align-items: center;
   justify-content: space-between;
   padding: 10px 15px;
 }
 
-#strength input {
-  flex: 1;
-  margin-left: 20px;
+#strength,
+#transition {
+  > div:first-child {
+    width: 35%;
+  }
+
+  input {
+    flex: 1;
+    margin-left: 20px;
+  }
 }
 
-#strength-value {
+#strength-value,
+#transition-value {
   flex: 1 1 40%;
 }
 
 #review {
-  color: $white-text;
+  color: $brighter-text;
   background: linear-gradient(45deg, white, $title-bg);
   box-shadow: 0 0 10px $shadow;
   padding: 10px 15px;
