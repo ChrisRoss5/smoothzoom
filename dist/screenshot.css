@@ -1,10 +1,11 @@
-#zoom-screenshot {
+[zoom-topmost] {
   position: fixed !important;
   top: 0 !important;
   left: 0 !important;
-  width: calc(100% - 10px);
-  height: calc(100% - 10px);
-  border: 5px solid red !important;
+  width: 100vw !important;
+  height: 100vh !important;
+  outline: 3px solid red !important;
   box-shadow: 0 0 15px 3px red !important;
   z-index: 10000000000000002000 !important;
+  background: black !important;
 }

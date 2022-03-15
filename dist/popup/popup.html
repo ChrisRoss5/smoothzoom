@@ -20,19 +20,19 @@
     <div id="content">
       <div id="keys">
         <label>
-          <input type="radio" name="key" key="rightClick" />
+          <input tabindex="-1" type="radio" name="key" key="rightClick" />
           RClick
         </label>
         <label>
-          <input type="radio" name="key" key="altKey" />
+          <input tabindex="-1" type="radio" name="key" key="altKey" />
           Alt
         </label>
         <label>
-          <input type="radio" name="key" key="ctrlKey" />
+          <input tabindex="-1" type="radio" name="key" key="ctrlKey" />
           Ctrl
         </label>
         <label>
-          <input type="radio" name="key" key="shiftKey" />
+          <input tabindex="-1" type="radio" name="key" key="shiftKey" />
           Shift
         </label>
         <div class="info">
@@ -46,20 +46,20 @@
       <div id="options">
         <label>
           Website interactivity:
-          <input type="checkbox" key="websiteInteractivity" />
+          <input tabindex="-1" type="checkbox" key="websiteInteractivity" />
           <div class="info">Enables website interactivity while in zoom.</div>
         </label>
         <label>
           Hold to zoom:
-          <input type="checkbox" key="holdToZoom" />
+          <input tabindex="-1" type="checkbox" key="holdToZoom" />
           <div class="info">
-            Exits zoom when the chosen key is released. When disabled, use the
-            same key again.
+            When disabled or in fullscreen video/element, use the chosen key
+            again to exit zoom.
           </div>
         </label>
         <label>
           Use screenshot:
-          <input type="checkbox" key="useScreenshot" />
+          <input tabindex="-1" type="checkbox" key="useScreenshot" />
           <div class="info">
             Takes a screenshot of a website, moment before it starts zooming
             into it.
@@ -72,6 +72,7 @@
       <label id="strength">
         <div>Strength:</div>
         <input
+          tabindex="-1"
           type="range"
           min="0"
           max="1"
@@ -85,10 +86,10 @@
           Minimum: 0.25 Maximum: 4
         </div>
       </label>
-
       <label id="transition">
         <div>Transition:</div>
         <input
+          tabindex="-1"
           type="range"
           min="0"
           max="400"

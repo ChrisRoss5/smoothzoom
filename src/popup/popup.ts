@@ -8,6 +8,9 @@
     transition: 200,
   };
 
+  const interactivityLabel = document.querySelector(
+    "input[key='websiteInteractivity']"
+  )!.parentElement!;
   const strengthValueEl = document.querySelector("#strength-value")!;
   const transitionValueEl = document.querySelector("#transition-value")!;
   const reviewEl = document.querySelector("#review") as HTMLAnchorElement;
@@ -18,7 +21,7 @@
 
     for (const input of document.querySelectorAll("input")) {
       const key = input.getAttribute("key")!;
-      const { activationKey, strength, transition } = storage;
+      const { activationKey, strength, transition, useScreenshot } = storage;
 
       if (
         (key as ActivationKey) == activationKey ||
@@ -32,24 +35,30 @@
         input.value = transition.toString();
         transitionValueEl.textContent = transition + "ms";
       }
+      if (useScreenshot) interactivityLabel.className = "disabled";
 
-      input.onclick = () => {
-        if (input.type == "radio") {
-          chrome.storage.sync.set({ activationKey: key });
-        } else if (key == "strength") {
-          const strength = parseFloat(input.value);
-          chrome.storage.sync.set({ strength });
-          strengthValueEl.textContent = getStrength(strength).toFixed(2);
-        } else if (key == "transition") {
-          const transition = Math.round(parseFloat(input.value));
-          chrome.storage.sync.set({ transition });
-          transitionValueEl.textContent = transition + "ms";
-        } else {
-          chrome.storage.sync.set({ [key]: input.checked });
-        }
-      };
+      input.addEventListener("click", inputClicked);
     }
   });
+
+  function inputClicked(this: HTMLInputElement) {
+    const key = this.getAttribute("key")!;
+    if (this.type == "radio") {
+      chrome.storage.sync.set({ activationKey: key });
+    } else if (key == "strength") {
+      const strength = parseFloat(this.value);
+      chrome.storage.sync.set({ strength });
+      strengthValueEl.textContent = getStrength(strength).toFixed(2);
+    } else if (key == "transition") {
+      const transition = Math.round(parseFloat(this.value));
+      chrome.storage.sync.set({ transition });
+      transitionValueEl.textContent = transition + "ms";
+    } else {
+      chrome.storage.sync.set({ [key]: this.checked });
+      if (key == "useScreenshot")
+        interactivityLabel.className = this.checked ? "disabled" : "";
+    }
+  }
 
   /* Shared function */
   function getStrength(percentage: number) {

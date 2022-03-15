@@ -9,7 +9,7 @@ $shadow: #97a6c4;
 body {
   margin: 0;
   padding: 0;
-  width: 300px;
+  width: 350px;
   color: $main-text;
   font-size: 20px;
   font-family: Ubuntu, Arial, Helvetica, sans-serif;
@@ -28,6 +28,11 @@ a {
 
 label {
   position: relative;
+
+  &.disabled {
+    opacity: 0.5;
+    pointer-events: none;
+  }
 
   &:hover {
     cursor: pointer;
@@ -79,7 +84,7 @@ label {
   padding: 0 10px;
   background: $title-bg;
   color: $brighter-text;
-  font-size: 14px;
+  font-size: 0.75em;
   box-shadow: 0 0 10px $shadow;
   transform: translateX(calc(100% + 15px));
   transition: transform 350ms;
@@ -122,7 +127,6 @@ label {
 #keys {
   position: relative;
   display: flex;
-  font-size: 16px;
   margin-bottom: 15px;
   padding: 0 5px;
 

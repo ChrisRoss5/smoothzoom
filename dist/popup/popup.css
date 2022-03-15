@@ -4,7 +4,7 @@
 body {
   margin: 0;
   padding: 0;
-  width: 300px;
+  width: 350px;
   color: #595959;
   font-size: 20px;
   font-family: Ubuntu, Arial, Helvetica, sans-serif;
@@ -23,6 +23,10 @@ a {
 
 label {
   position: relative;
+}
+label.disabled {
+  opacity: 0.5;
+  pointer-events: none;
 }
 label:hover {
   cursor: pointer;
@@ -69,7 +73,7 @@ label input:not([type=range])::after {
   padding: 0 10px;
   background: #e5ebf7;
   color: #707070;
-  font-size: 14px;
+  font-size: 0.75em;
   box-shadow: 0 0 10px #97a6c4;
   transform: translateX(calc(100% + 15px));
   transition: transform 350ms;
@@ -108,7 +112,6 @@ label input:not([type=range])::after {
 #keys {
   position: relative;
   display: flex;
-  font-size: 16px;
   margin-bottom: 15px;
   padding: 0 5px;
 }
