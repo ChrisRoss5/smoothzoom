@@ -1,0 +1,27 @@
+/* document.querySelector("#zoom-topmost"); */
+/* https://developer.mozilla.org/en-US/docs/Web/CSS/Specificity */
+#zoom-topmost {
+  position: fixed !important;
+  top: 0 !important;
+  left: 0 !important;
+  width: 100vw !important;
+  height: 100vh !important;
+  outline: 3px solid red !important;
+  box-shadow: 0 0 15px 3px red !important;
+  z-index: 10000000000000002000 !important;
+  background: black !important;
+}
+
+/* https://developer.mozilla.org/en-US/docs/Web/CSS/position */
+:root[in-zoom] *:not(#zoom-topmost) {
+  transform: none !important;
+  perspective: none !important;
+  filter: none !important;
+  z-index: -1;
+}
+:root[in-zoom] #zoom-topmost * {
+  transform: revert !important;
+  perspective: revert !important;
+  filter: revert !important;
+  z-index: revert !important;
+}

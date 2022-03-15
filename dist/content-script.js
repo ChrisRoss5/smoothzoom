@@ -63,6 +63,7 @@ function onWheel(e) {
                 yield setFullscreenZoom();
         }
         inZoom = true;
+        doc.setAttribute("in-zoom", "");
         scale(e);
     });
 }
@@ -116,6 +117,7 @@ function removeZoom() {
     isDoubleClick = false;
     zoomLevel = 0;
     inZoom = false;
+    doc.removeAttribute("in-zoom");
     setStyleProperty("transition", `transform ${storage.transition}ms`);
     setStyleProperty("transform", "none");
     if (!storage.websiteInteractivity)
@@ -127,14 +129,14 @@ function removeZoom() {
             if (storage.useScreenshot)
                 targetEl.remove();
             else
-                targetEl.removeAttribute("zoom-topmost");
+                targetEl.id = "";
             fullscreenEl.requestFullscreen(); // New event is required to allow this action
             targetEl = doc;
         });
         return;
     }
     // Screenshot
-    if (targetEl.hasAttribute("zoom-topmost")) {
+    if (targetEl.id == "zoom-topmost") {
         setTimeout(() => {
             targetEl.remove();
             targetEl = doc;
@@ -172,17 +174,17 @@ function isZoomOver(e) {
         (e.key == "Control" && storage.activationKey == "ctrlKey") ||
         (e.key == "Shift" && storage.activationKey == "shiftKey"));
 }
-function setNewTargetEl(el) {
-    targetEl = el;
-    targetEl.setAttribute("zoom-topmost", "");
-}
-function setStyleProperty(key, value) {
-    targetEl.style.setProperty(key, value, "important");
-}
 function getStrength(percentage) {
     if (percentage < 0.5)
         return 0.25 + 1.5 * percentage;
     return 1 + 6 * (percentage - 0.5);
+}
+function setNewTargetEl(el) {
+    targetEl = el;
+    targetEl.id = ("zoom-topmost");
+}
+function setStyleProperty(key, value) {
+    targetEl.style.setProperty(key, value, "important");
 }
 function updateStorage(key, value) {
     storage[key] = value;

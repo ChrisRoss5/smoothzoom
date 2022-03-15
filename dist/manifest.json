@@ -30,7 +30,7 @@
         "content-script.js"
       ],
       "css": [
-        "screenshot.css"
+        "style.css"
       ],
       "all_frames": true
     }

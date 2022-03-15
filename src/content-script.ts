@@ -57,6 +57,7 @@ async function onWheel(e: WheelEvent) {
   }
 
   inZoom = true;
+  doc.setAttribute("in-zoom", "");
   scale(e);
 }
 
@@ -116,6 +117,7 @@ function removeZoom() {
 
   zoomLevel = 0;
   inZoom = false;
+  doc.removeAttribute("in-zoom");
   setStyleProperty("transition", `transform ${storage.transition}ms`);
   setStyleProperty("transform", "none");
   if (!storage.websiteInteractivity) setStyleProperty("pointer-events", "auto");
@@ -125,7 +127,7 @@ function removeZoom() {
     inFullscreenZoom = false;
     document.exitFullscreen().then(() => {
       if (storage.useScreenshot) targetEl.remove();
-      else targetEl.removeAttribute("zoom-topmost");
+      else targetEl.id = "";
       fullscreenEl.requestFullscreen(); // New event is required to allow this action
       targetEl = doc;
     });
@@ -133,7 +135,7 @@ function removeZoom() {
   }
 
   // Screenshot
-  if (targetEl.hasAttribute("zoom-topmost")) {
+  if (targetEl.id == "zoom-topmost") {
     setTimeout(() => {
       targetEl.remove();
       targetEl = doc;
@@ -145,6 +147,7 @@ async function setFullscreenZoom() {
   inFullscreenZoom = true;
   await document.exitFullscreen();
   doc.requestFullscreen();  // This "eats" the first event
+
   if (!storage.useScreenshot) setNewTargetEl(fullscreenEl);
 }
 
@@ -178,18 +181,18 @@ function isZoomOver(e: KeyboardEvent) {
   );
 }
 
+function getStrength(percentage: number) {
+  if (percentage < 0.5) return 0.25 + 1.5 * percentage;
+  return 1 + 6 * (percentage - 0.5);
+}
+
 function setNewTargetEl(el: HTMLElement) {
   targetEl = el;
-  targetEl.setAttribute("zoom-topmost", "");
+  targetEl.id = ("zoom-topmost");
 }
 
 function setStyleProperty(key: string, value: string) {
   targetEl.style.setProperty(key, value, "important");
-}
-
-function getStrength(percentage: number) {
-  if (percentage < 0.5) return 0.25 + 1.5 * percentage;
-  return 1 + 6 * (percentage - 0.5);
 }
 
 function updateStorage<Key extends keyof ChromeStorage>(
