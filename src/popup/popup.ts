@@ -29,10 +29,10 @@
       ) {
         input.checked = true;
       } else if (key == "strength") {
-        input.value = strength.toFixed(2);
+        if (strength != undefined) input.value = strength.toFixed(2);
         strengthValueEl.textContent = getStrength(strength).toFixed(2);
       } else if (key == "transition") {
-        input.value = transition.toString();
+        if (transition != undefined) input.value = transition.toString();
         transitionValueEl.textContent = transition + "ms";
       }
       if (useScreenshot) interactivityLabel.className = "disabled";

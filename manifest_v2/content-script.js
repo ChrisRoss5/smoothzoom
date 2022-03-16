@@ -1,8 +1,4 @@
 "use strict";
-/* https://developer.mozilla.org/en-US/docs/Web/CSS/Specificity */
-/* https://specifishity.com/ */
-/* https://developer.mozilla.org/en-US/docs/Web/CSS/position */
-/* https://stackoverflow.com/a/52937920/10264782 */
 var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
     function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
     return new (P || (P = Promise))(function (resolve, reject) {
@@ -13,7 +9,6 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
     });
 };
 const doc = document.documentElement;
-let docStyle;
 let targetEl = doc;
 let storage = {
     activationKey: "rightClick",
@@ -25,43 +20,40 @@ let storage = {
 };
 let zoomLevel = 0;
 let inZoom = false;
-let isExitingZoom = false;
+let isRemovingZoom = false;
 let isRightClickPressed = false;
-// Fullscreen problem
+let isDoubleClick = false;
+let isCreatingScreenshot = false;
+// Fullscreen problems
 let inFullscreenZoom = false;
 let fullscreenEl;
 let fullscreenElParent;
 let fullscreenElIdx;
 let fullscreenElStyle;
-// Fixed elements problem
-const fixedEls = [];
 const listeners = {
-    isCreatingScreenshot: false,
     onWheel(e) {
         return __awaiter(this, void 0, void 0, function* () {
-            if (!(helpers.isZoomReady(e) || inZoom))
+            if (!helpers.isZoomReady(e) && !inZoom)
                 return;
             e.preventDefault();
-            if (this.isCreatingScreenshot || isExitingZoom)
+            if (isCreatingScreenshot || isRemovingZoom)
                 return;
-            if (!inZoom) {
-                if (storage.useScreenshot) {
-                    this.isCreatingScreenshot = true;
-                    yield control.createScreenshot();
-                    this.isCreatingScreenshot = false;
-                }
-                helpers.enableZoom();
+            if (!inZoom && storage.useScreenshot) {
+                isCreatingScreenshot = true;
+                yield control.createScreenshot();
+                isCreatingScreenshot = false;
             }
             if (!inFullscreenZoom) {
                 fullscreenEl = document.fullscreenElement;
                 if (fullscreenEl && fullscreenEl != doc)
                     yield control.setFullscreenZoom();
             }
+            helpers.enableZoom();
             control.scale(e);
         });
     },
     onMousemove(e) {
-        if (!inZoom || isExitingZoom)
+        if (!inZoom || isRemovingZoom)
             return;
         helpers.setStyleProperty("transition", "none");
         control.transformOrigin(e);
@@ -75,7 +67,7 @@ const listeners = {
             isRightClickPressed = false;
             if (inZoom && storage.activationKey == "rightClick")
                 // Using setTimeout to allow onContextmenu() before inZoom == false;
-                setTimeout(control.exitZoom);
+                setTimeout(control.removeZoom);
         }
     },
     onContextmenu(e) {
@@ -84,7 +76,7 @@ const listeners = {
     },
     onKeyup(e) {
         if (inZoom && helpers.isZoomOver(e))
-            control.exitZoom();
+            control.removeZoom();
     },
 };
 const control = {
@@ -102,15 +94,14 @@ const control = {
         const [x, y] = useClient ? [e.clientX, e.clientY] : [e.pageX, e.pageY];
         helpers.setStyleProperty("transform-origin", `${x}px ${y}px`);
     },
-    isDoubleClick: false,
-    exitZoom() {
+    removeZoom() {
         return __awaiter(this, void 0, void 0, function* () {
-            if (!this.isDoubleClick && (!storage.holdToZoom || inFullscreenZoom)) {
-                this.isDoubleClick = true;
+            if (!isDoubleClick && (!storage.holdToZoom || inFullscreenZoom)) {
+                isDoubleClick = true;
                 return;
             }
-            this.isDoubleClick = false;
-            isExitingZoom = true;
+            isDoubleClick = false;
+            isRemovingZoom = true;
             helpers.setStyleProperty("transition", `transform ${storage.transition}ms`);
             helpers.setStyleProperty("transform", "none");
             if (inFullscreenZoom)
@@ -121,7 +112,7 @@ const control = {
             if (storage.useScreenshot)
                 targetEl.remove();
             targetEl = doc;
-            isExitingZoom = false;
+            isRemovingZoom = false;
         });
     },
     setFullscreenZoom() {
@@ -162,16 +153,15 @@ const control = {
 const helpers = {
     enableZoom() {
         inZoom = true;
-        docStyle = doc.getAttribute("style") || "";
-        this.setStyleProperty("width", "100vw");
-        this.setStyleProperty("height", "100vw");
-        this.setStyleProperty("overflow", "hidden");
+        doc.setAttribute("in-zoom", "");
         if (!storage.websiteInteractivity)
             this.setStyleProperty("pointer-events", "none");
     },
     disableZoom() {
         inZoom = false;
-        doc.setAttribute("style", docStyle);
+        doc.removeAttribute("in-zoom");
+        if (!storage.websiteInteractivity)
+            this.setStyleProperty("pointer-events", "auto");
         zoomLevel = 0;
     },
     isZoomReady(e) {

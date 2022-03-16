@@ -14,6 +14,8 @@
     const reviewEl = document.querySelector("#review");
     reviewEl.href = `https://chrome.google.com/webstore/detail/${chrome.runtime.id}/reviews`;
     chrome.storage.sync.get(null, (response) => {
+      console.log(response);
+
         storage = Object.assign(Object.assign({}, storage), response);
         for (const input of document.querySelectorAll("input")) {
             const key = input.getAttribute("key");
@@ -23,13 +25,11 @@
                 input.checked = true;
             }
             else if (key == "strength") {
-                if (strength != undefined)
-                    input.value = strength.toFixed(2);
+                //input.value = strength.toFixed(2);
                 strengthValueEl.textContent = getStrength(strength).toFixed(2);
             }
             else if (key == "transition") {
-                if (transition != undefined)
-                    input.value = transition.toString();
+                //input.value = transition.toString();
                 transitionValueEl.textContent = transition + "ms";
             }
             if (useScreenshot)
@@ -38,6 +38,7 @@
         }
     });
     function inputClicked() {
+      console.log(2);
         const key = this.getAttribute("key");
         if (this.type == "radio") {
             chrome.storage.sync.set({ activationKey: key });

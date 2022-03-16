@@ -15,9 +15,8 @@ body {
   font-family: Ubuntu, Arial, Helvetica, sans-serif;
   background-image: url("../img/circles.png");
   background-size: cover;
-  background-color: rgba(255, 255, 255, 0.6);
-  background-blend-mode: lighten;
   background-repeat: no-repeat;
+  overflow: hidden;
 }
 
 a {
@@ -177,6 +176,5 @@ label {
 
   img {
     width: 20px;
-    filter: drop-shadow(0 0 7px $shadow);
   }
 }
