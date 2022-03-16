@@ -17,6 +17,8 @@ let isCreatingScreenshot = false;
 // Fullscreen problems
 let inFullscreenZoom = false;
 let fullscreenEl: HTMLElement;
+let fullscreenElParent: HTMLElement;
+let fullscreenElIdx: number;
 
 chrome.storage.sync.get(null, (response) => {
   storage = { ...storage, ...(response as ChromeStorage) };
@@ -38,7 +40,6 @@ chrome.storage.onChanged.addListener((changes) => {
 async function onWheel(e: WheelEvent) {
   if (!isZoomReady(e) && !inZoom) return;
   e.preventDefault();
-
   // Screenshot
   if (isCreatingScreenshot) return;
   if (!inZoom && storage.useScreenshot) {
@@ -46,44 +47,35 @@ async function onWheel(e: WheelEvent) {
     await createScreenshot();
     isCreatingScreenshot = false;
   }
-
   // Website interactivity
   if (!storage.websiteInteractivity) setStyleProperty("pointer-events", "none");
-
   // Fullscreen problems
   if (!inFullscreenZoom) {
     fullscreenEl = document.fullscreenElement as HTMLElement;
-    if (fullscreenEl) await setFullscreenZoom();
+    if (fullscreenEl && fullscreenEl != doc) await setFullscreenZoom();
   }
-
   inZoom = true;
   doc.setAttribute("in-zoom", "");
   scale(e);
 }
-
 function onMousemove(e: MouseEvent) {
   if (!inZoom) return;
   setStyleProperty("transition", "none");
   transformOrigin(e);
 }
-
 function onMousedown(e: MouseEvent) {
   if (e.button == 2) isRightClickPressed = true;
 }
-
 function onMouseup(e: MouseEvent) {
   if (isRightClickPressed && e.button == 2) {
     isRightClickPressed = false;
-
     // Using setTimeout to allow onContextmenu() before inZoom == false;
     if (inZoom && storage.activationKey == "rightClick") setTimeout(removeZoom);
   }
 }
-
 function onContextmenu(e: Event) {
   if (inZoom) e.preventDefault();
 }
-
 function onKeyup(e: KeyboardEvent) {
   if (inZoom && isZoomOver(e)) removeZoom();
 }
@@ -99,15 +91,11 @@ function scale(e: WheelEvent) {
   setStyleProperty("transform", `scale(${1 + zoomLevel})`);
   transformOrigin(e);
 }
-
 function transformOrigin(e: MouseEvent) {
-  const [x, y] =
-    storage.useScreenshot || inFullscreenZoom
-      ? [e.clientX, e.clientY]
-      : [e.pageX, e.pageY];
+  const useClient = storage.useScreenshot || inFullscreenZoom;
+  const [x, y] = useClient ? [e.clientX, e.clientY] : [e.pageX, e.pageY];
   setStyleProperty("transform-origin", `${x}px ${y}px`);
 }
-
 function removeZoom() {
   if (!isDoubleClick && (!storage.holdToZoom || inFullscreenZoom)) {
     isDoubleClick = true;
@@ -121,19 +109,18 @@ function removeZoom() {
   setStyleProperty("transition", `transform ${storage.transition}ms`);
   setStyleProperty("transform", "none");
   if (!storage.websiteInteractivity) setStyleProperty("pointer-events", "auto");
-
   // Fullscreen problems
   if (inFullscreenZoom) {
     inFullscreenZoom = false;
     document.exitFullscreen().then(() => {
       if (storage.useScreenshot) targetEl.remove();
       else targetEl.id = "";
+      insertChild(fullscreenElParent, fullscreenEl, fullscreenElIdx);
       fullscreenEl.requestFullscreen(); // New event is required to allow this action
       targetEl = doc;
     });
     return;
   }
-
   // Screenshot
   if (targetEl.id == "zoom-topmost") {
     setTimeout(() => {
@@ -142,20 +129,20 @@ function removeZoom() {
     }, storage.transition);
   }
 }
-
 async function setFullscreenZoom() {
   inFullscreenZoom = true;
   await document.exitFullscreen();
-  doc.requestFullscreen();  // This "eats" the first event
-
-  if (!storage.useScreenshot) setNewTargetEl(fullscreenEl);
+  doc.requestFullscreen(); // This "eats" the first event
+  if (storage.useScreenshot) return;
+  fullscreenElParent = fullscreenEl.parentElement!;
+  fullscreenElIdx = getChildIndex(fullscreenEl);
+  setTargetEl(doc.appendChild(fullscreenEl));
 }
-
 function createScreenshot() {
   return new Promise((resolve) => {
     chrome.runtime.sendMessage("TAKE_SCREENSHOT", (dataUrl: string) => {
       const img = document.createElement("img");
-      setNewTargetEl(doc.appendChild(img));
+      setTargetEl(doc.appendChild(img));
       img.onload = resolve;
       img.src = dataUrl;
     });
@@ -172,7 +159,6 @@ function isZoomReady(e: WheelEvent) {
     (e.shiftKey && storage.activationKey == "shiftKey")
   );
 }
-
 function isZoomOver(e: KeyboardEvent) {
   return (
     (e.key == "Alt" && storage.activationKey == "altKey") ||
@@ -180,24 +166,29 @@ function isZoomOver(e: KeyboardEvent) {
     (e.key == "Shift" && storage.activationKey == "shiftKey")
   );
 }
-
 function getStrength(percentage: number) {
   if (percentage < 0.5) return 0.25 + 1.5 * percentage;
   return 1 + 6 * (percentage - 0.5);
 }
-
-function setNewTargetEl(el: HTMLElement) {
+function setTargetEl(el: HTMLElement) {
   targetEl = el;
-  targetEl.id = ("zoom-topmost");
+  targetEl.id = "zoom-topmost";
 }
-
 function setStyleProperty(key: string, value: string) {
   targetEl.style.setProperty(key, value, "important");
 }
-
 function updateStorage<Key extends keyof ChromeStorage>(
   key: Key,
   value: ChromeStorage[Key]
 ) {
   storage[key] = value;
+}
+
+/* Utils */
+
+function getChildIndex(node: Node) {
+  return Array.prototype.indexOf.call(node.parentElement!.childNodes, node);
+}
+function insertChild(parent: HTMLElement, child: HTMLElement, idx: number) {
+  parent.insertBefore(child, parent.childNodes[idx]);
 }

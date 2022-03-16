@@ -1,5 +1,6 @@
 /* document.querySelector("#zoom-topmost"); */
 /* https://developer.mozilla.org/en-US/docs/Web/CSS/Specificity */
+/* https://specifishity.com/ */
 #zoom-topmost {
   position: fixed !important;
   top: 0 !important;
@@ -13,15 +14,16 @@
 }
 
 /* https://developer.mozilla.org/en-US/docs/Web/CSS/position */
-:root[in-zoom] *:not(#zoom-topmost) {
-  transform: none !important;
-  perspective: none !important;
-  filter: none !important;
-  z-index: -1;
-}
-:root[in-zoom] #zoom-topmost * {
-  transform: revert !important;
-  perspective: revert !important;
-  filter: revert !important;
-  z-index: revert !important;
-}
+/* :root[in-zoom] {
+  *:not(#zoom-topmost) {
+    transform: none !important;
+    perspective: none !important;
+    filter: none !important;
+  }
+
+  #zoom-topmost * {
+    transform: revert !important;
+    perspective: revert !important;
+    filter: revert !important;
+  }
+} */

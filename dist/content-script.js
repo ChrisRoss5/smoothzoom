@@ -26,6 +26,8 @@ let isCreatingScreenshot = false;
 // Fullscreen problems
 let inFullscreenZoom = false;
 let fullscreenEl;
+let fullscreenElParent;
+let fullscreenElIdx;
 chrome.storage.sync.get(null, (response) => {
     storage = Object.assign(Object.assign({}, storage), response);
     document.addEventListener("wheel", onWheel, { passive: false });
@@ -59,7 +61,7 @@ function onWheel(e) {
         // Fullscreen problems
         if (!inFullscreenZoom) {
             fullscreenEl = document.fullscreenElement;
-            if (fullscreenEl)
+            if (fullscreenEl && fullscreenEl != doc)
                 yield setFullscreenZoom();
         }
         inZoom = true;
@@ -104,9 +106,8 @@ function scale(e) {
     transformOrigin(e);
 }
 function transformOrigin(e) {
-    const [x, y] = storage.useScreenshot || inFullscreenZoom
-        ? [e.clientX, e.clientY]
-        : [e.pageX, e.pageY];
+    const useClient = storage.useScreenshot || inFullscreenZoom;
+    const [x, y] = useClient ? [e.clientX, e.clientY] : [e.pageX, e.pageY];
     setStyleProperty("transform-origin", `${x}px ${y}px`);
 }
 function removeZoom() {
@@ -130,6 +131,7 @@ function removeZoom() {
                 targetEl.remove();
             else
                 targetEl.id = "";
+            insertChild(fullscreenElParent, fullscreenEl, fullscreenElIdx);
             fullscreenEl.requestFullscreen(); // New event is required to allow this action
             targetEl = doc;
         });
@@ -148,15 +150,18 @@ function setFullscreenZoom() {
         inFullscreenZoom = true;
         yield document.exitFullscreen();
         doc.requestFullscreen(); // This "eats" the first event
-        if (!storage.useScreenshot)
-            setNewTargetEl(fullscreenEl);
+        if (storage.useScreenshot)
+            return;
+        fullscreenElParent = fullscreenEl.parentElement;
+        fullscreenElIdx = getChildIndex(fullscreenEl);
+        setTargetEl(doc.appendChild(fullscreenEl));
     });
 }
 function createScreenshot() {
     return new Promise((resolve) => {
         chrome.runtime.sendMessage("TAKE_SCREENSHOT", (dataUrl) => {
             const img = document.createElement("img");
-            setNewTargetEl(doc.appendChild(img));
+            setTargetEl(doc.appendChild(img));
             img.onload = resolve;
             img.src = dataUrl;
         });
@@ -179,13 +184,20 @@ function getStrength(percentage) {
         return 0.25 + 1.5 * percentage;
     return 1 + 6 * (percentage - 0.5);
 }
-function setNewTargetEl(el) {
+function setTargetEl(el) {
     targetEl = el;
-    targetEl.id = ("zoom-topmost");
+    targetEl.id = "zoom-topmost";
 }
 function setStyleProperty(key, value) {
     targetEl.style.setProperty(key, value, "important");
 }
 function updateStorage(key, value) {
     storage[key] = value;
+}
+/* Utils */
+function getChildIndex(node) {
+    return Array.prototype.indexOf.call(node.parentElement.childNodes, node);
+}
+function insertChild(parent, child, idx) {
+    parent.insertBefore(child, parent.childNodes[idx]);
 }
