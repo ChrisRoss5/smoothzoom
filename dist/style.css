@@ -1,7 +1,6 @@
-/* document.querySelector("#zoom-topmost"); */
 /* https://developer.mozilla.org/en-US/docs/Web/CSS/Specificity */
 /* https://specifishity.com/ */
-#zoom-topmost {
+[zoom-topmost] {
   position: fixed !important;
   top: 0 !important;
   left: 0 !important;
@@ -14,16 +13,9 @@
 }
 
 /* https://developer.mozilla.org/en-US/docs/Web/CSS/position */
-/* :root[in-zoom] {
-  *:not(#zoom-topmost) {
-    transform: none !important;
-    perspective: none !important;
-    filter: none !important;
-  }
-
-  #zoom-topmost * {
-    transform: revert !important;
-    perspective: revert !important;
-    filter: revert !important;
-  }
-} */
+/* https://stackoverflow.com/a/52937920/10264782 */
+:root[in-zoom] {
+  width: 100vw !important;
+  height: 100vw !important;
+  overflow: hidden !important;
+}

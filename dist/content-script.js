@@ -20,6 +20,7 @@ let storage = {
 };
 let zoomLevel = 0;
 let inZoom = false;
+let isRemovingZoom = false;
 let isRightClickPressed = false;
 let isDoubleClick = false;
 let isCreatingScreenshot = false;
@@ -28,6 +29,7 @@ let inFullscreenZoom = false;
 let fullscreenEl;
 let fullscreenElParent;
 let fullscreenElIdx;
+let fullscreenElStyle;
 chrome.storage.sync.get(null, (response) => {
     storage = Object.assign(Object.assign({}, storage), response);
     document.addEventListener("wheel", onWheel, { passive: false });
@@ -44,7 +46,7 @@ chrome.storage.onChanged.addListener((changes) => {
 /* Listeners */
 function onWheel(e) {
     return __awaiter(this, void 0, void 0, function* () {
-        if (!isZoomReady(e) && !inZoom)
+        if ((!isZoomReady(e) && !inZoom) || isRemovingZoom)
             return;
         e.preventDefault();
         // Screenshot
@@ -55,17 +57,13 @@ function onWheel(e) {
             yield createScreenshot();
             isCreatingScreenshot = false;
         }
-        // Website interactivity
-        if (!storage.websiteInteractivity)
-            setStyleProperty("pointer-events", "none");
         // Fullscreen problems
         if (!inFullscreenZoom) {
             fullscreenEl = document.fullscreenElement;
             if (fullscreenEl && fullscreenEl != doc)
                 yield setFullscreenZoom();
         }
-        inZoom = true;
-        doc.setAttribute("in-zoom", "");
+        enableZoom();
         scale(e);
     });
 }
@@ -111,39 +109,37 @@ function transformOrigin(e) {
     setStyleProperty("transform-origin", `${x}px ${y}px`);
 }
 function removeZoom() {
-    if (!isDoubleClick && (!storage.holdToZoom || inFullscreenZoom)) {
-        isDoubleClick = true;
-        return;
-    }
-    isDoubleClick = false;
-    zoomLevel = 0;
-    inZoom = false;
-    doc.removeAttribute("in-zoom");
-    setStyleProperty("transition", `transform ${storage.transition}ms`);
-    setStyleProperty("transform", "none");
-    if (!storage.websiteInteractivity)
-        setStyleProperty("pointer-events", "auto");
-    // Fullscreen problems
-    if (inFullscreenZoom) {
-        inFullscreenZoom = false;
-        document.exitFullscreen().then(() => {
-            if (storage.useScreenshot)
-                targetEl.remove();
-            else
-                targetEl.id = "";
-            insertChild(fullscreenElParent, fullscreenEl, fullscreenElIdx);
-            fullscreenEl.requestFullscreen(); // New event is required to allow this action
-            targetEl = doc;
-        });
-        return;
-    }
-    // Screenshot
-    if (targetEl.id == "zoom-topmost") {
-        setTimeout(() => {
+    return __awaiter(this, void 0, void 0, function* () {
+        if (!isDoubleClick && (!storage.holdToZoom || inFullscreenZoom)) {
+            isDoubleClick = true;
+            return;
+        }
+        isDoubleClick = false;
+        isRemovingZoom = true;
+        setStyleProperty("transition", `transform ${storage.transition}ms`);
+        setStyleProperty("transform", "none");
+        yield sleep(storage.transition);
+        disableZoom();
+        if (inFullscreenZoom) {
+            // Fullscreen problems
+            inFullscreenZoom = false;
+            document.exitFullscreen().then(() => {
+                if (storage.useScreenshot)
+                    targetEl.remove();
+                else
+                    resetTargetStyle();
+                insertChild(fullscreenElParent, fullscreenEl, fullscreenElIdx);
+                fullscreenEl.requestFullscreen(); // New event is required to allow this action
+                targetEl = doc;
+            });
+        }
+        else if (targetEl.hasAttribute("zoom-topmost")) {
+            // Screenshot
             targetEl.remove();
             targetEl = doc;
-        }, storage.transition);
-    }
+        }
+        isRemovingZoom = false;
+    });
 }
 function setFullscreenZoom() {
     return __awaiter(this, void 0, void 0, function* () {
@@ -152,6 +148,7 @@ function setFullscreenZoom() {
         doc.requestFullscreen(); // This "eats" the first event
         if (storage.useScreenshot)
             return;
+        fullscreenElStyle = fullscreenEl.getAttribute("style") || "";
         fullscreenElParent = fullscreenEl.parentElement;
         fullscreenElIdx = getChildIndex(fullscreenEl);
         setTargetEl(doc.appendChild(fullscreenEl));
@@ -168,6 +165,19 @@ function createScreenshot() {
     });
 }
 /* Helpers */
+function enableZoom() {
+    inZoom = true;
+    doc.setAttribute("in-zoom", "");
+    if (!storage.websiteInteractivity)
+        setStyleProperty("pointer-events", "none");
+}
+function disableZoom() {
+    inZoom = false;
+    doc.removeAttribute("in-zoom");
+    if (!storage.websiteInteractivity)
+        setStyleProperty("pointer-events", "auto");
+    zoomLevel = 0;
+}
 function isZoomReady(e) {
     return ((isRightClickPressed && storage.activationKey == "rightClick") ||
         (e.altKey && storage.activationKey == "altKey") ||
@@ -186,7 +196,19 @@ function getStrength(percentage) {
 }
 function setTargetEl(el) {
     targetEl = el;
-    targetEl.id = "zoom-topmost";
+    targetEl.setAttribute("zoom-topmost", "");
+    setStyleProperty("position", "fixed");
+    setStyleProperty("top", "0");
+    setStyleProperty("left", "0");
+    setStyleProperty("width", "calc(100vw)");
+    setStyleProperty("height", "calc(100vh)");
+    setStyleProperty("outline", "3px solid red");
+    setStyleProperty("box-shadow", "0 0 15px 3px red");
+    setStyleProperty("z-index", "9999999999999999999");
+    setStyleProperty("background", "black");
+}
+function resetTargetStyle() {
+    targetEl.setAttribute("style", fullscreenElStyle);
 }
 function setStyleProperty(key, value) {
     targetEl.style.setProperty(key, value, "important");
@@ -200,4 +222,7 @@ function getChildIndex(node) {
 }
 function insertChild(parent, child, idx) {
     parent.insertBefore(child, parent.childNodes[idx]);
+}
+function sleep(ms) {
+    return new Promise((resolve) => setTimeout(resolve, ms));
 }

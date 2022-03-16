@@ -1,9 +1,7 @@
-/* document.querySelector("#zoom-topmost"); */
-
 /* https://developer.mozilla.org/en-US/docs/Web/CSS/Specificity */
 /* https://specifishity.com/ */
 
-#zoom-topmost {
+[zoom-topmost] {
   position: fixed !important;
   top: 0 !important;
   left: 0 !important;
@@ -12,22 +10,14 @@
   outline: 3px solid red !important;
   box-shadow: 0 0 15px 3px red !important;
   z-index: 9999999999999999999 !important;
-
   background: black !important; // For fullscreen elements
 }
 
 /* https://developer.mozilla.org/en-US/docs/Web/CSS/position */
+/* https://stackoverflow.com/a/52937920/10264782 */
 
-/* :root[in-zoom] {
-  *:not(#zoom-topmost) {
-    transform: none !important;
-    perspective: none !important;
-    filter: none !important;
-  }
-
-  #zoom-topmost * {
-    transform: revert !important;
-    perspective: revert !important;
-    filter: revert !important;
-  }
-} */
+:root[in-zoom] {
+  width: 100vw !important;
+  height: 100vw !important;
+  overflow: hidden !important;
+}
