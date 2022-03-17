@@ -33,8 +33,15 @@ let fullscreenEl;
 let fullscreenElParent;
 let fullscreenElIdx;
 let fullscreenElStyle;
-// Fixed elements problem
-const fixedEls = [];
+/*
+ * Possible solution #2: Instead of changing fullscreenEl position in DOM, all
+ * its ancestors need to have the highest specificity style which defines values:
+ * filter, transform, backdrop-filter, perspective, contain,
+ * transform-style, content-visibility, and will-change as none.
+ */
+// Elements with position "fixed" problem
+let fixedElsMapped = [];
+/* --- */
 const listeners = {
     isCreatingScreenshot: false,
     onWheel(e) {
@@ -168,11 +175,22 @@ const helpers = {
         this.setStyleProperty("overflow", "hidden");
         if (!storage.websiteInteractivity)
             this.setStyleProperty("pointer-events", "none");
+        fixedElsMapped = utils.getFixedElements(doc).map((el) => {
+            const elInfo = { el, style: el.getAttribute("style") || "" };
+            const rect = el.getBoundingClientRect();
+            this.setStyleProperty("top", rect.top + doc.scrollTop + "px", el);
+            this.setStyleProperty("left", rect.left + doc.scrollLeft + "px", el);
+            this.setStyleProperty("height", rect.height + "px", el);
+            this.setStyleProperty("width", rect.width + "px", el);
+            this.setStyleProperty("transition", "none", el);
+            return elInfo;
+        });
     },
     disableZoom() {
         inZoom = false;
         doc.setAttribute("style", docStyle);
         zoomLevel = 0;
+        fixedElsMapped.forEach(({ el, style }) => el.setAttribute("style", style));
     },
     isZoomReady(e) {
         return ((isRightClickPressed && storage.activationKey == "rightClick") ||
@@ -202,8 +220,8 @@ const helpers = {
         this.setStyleProperty("z-index", "9999999999999999999");
         this.setStyleProperty("background", "black");
     },
-    setStyleProperty(key, value) {
-        targetEl.style.setProperty(key, value, "important");
+    setStyleProperty(key, value, el) {
+        (el || targetEl).style.setProperty(key, value, "important");
     },
     updateStorage(key, value) {
         storage[key] = value;
@@ -218,6 +236,12 @@ const utils = {
     },
     sleep(ms) {
         return new Promise((resolve) => setTimeout(resolve, ms));
+    },
+    isVisible(el) {
+        return !!(el.offsetWidth || el.offsetHeight || el.getClientRects().length);
+    },
+    getFixedElements(sourceEl) {
+        return [...sourceEl.getElementsByTagName("*")].filter((el) => getComputedStyle(el).position == "fixed");
     },
 };
 chrome.storage.sync.get(null, (response) => {

@@ -25,9 +25,17 @@ let fullscreenEl: HTMLElement;
 let fullscreenElParent: HTMLElement;
 let fullscreenElIdx: number;
 let fullscreenElStyle: string;
+/*
+ * Possible solution #2: Instead of changing fullscreenEl position in DOM, all
+ * its ancestors need to have the highest specificity style which defines values:
+ * filter, transform, backdrop-filter, perspective, contain,
+ * transform-style, content-visibility, and will-change as none.
+ */
 
-// Fixed elements problem
-const fixedEls: {el: HTMLElement, parent: HTMLElement, idx: number}[] = [];
+// Elements with position "fixed" problem
+let fixedElsMapped: { el: HTMLElement; style: string }[] = [];
+
+/* --- */
 
 const listeners = {
   isCreatingScreenshot: false,
@@ -73,7 +81,6 @@ const listeners = {
     if (inZoom && helpers.isZoomOver(e)) control.exitZoom();
   },
 };
-
 const control = {
   scale(e: WheelEvent) {
     const zoomType = -Math.sign(e.deltaY) as -1 | 1;
@@ -135,7 +142,6 @@ const control = {
     });
   },
 };
-
 const helpers = {
   enableZoom() {
     inZoom = true;
@@ -145,12 +151,22 @@ const helpers = {
     this.setStyleProperty("overflow", "hidden");
     if (!storage.websiteInteractivity)
       this.setStyleProperty("pointer-events", "none");
-
+    fixedElsMapped = utils.getFixedElements(doc).map((el) => {
+      const elInfo = { el, style: el.getAttribute("style") || "" };
+      const rect = el.getBoundingClientRect();
+      this.setStyleProperty("top", rect.top + doc.scrollTop + "px", el);
+      this.setStyleProperty("left", rect.left + doc.scrollLeft + "px", el);
+      this.setStyleProperty("height", rect.height + "px", el);
+      this.setStyleProperty("width", rect.width + "px", el);
+      this.setStyleProperty("transition", "none", el);
+      return elInfo;
+    });
   },
   disableZoom() {
     inZoom = false;
     doc.setAttribute("style", docStyle);
     zoomLevel = 0;
+    fixedElsMapped.forEach(({ el, style }) => el.setAttribute("style", style));
   },
   isZoomReady(e: WheelEvent) {
     return (
@@ -183,8 +199,8 @@ const helpers = {
     this.setStyleProperty("z-index", "9999999999999999999");
     this.setStyleProperty("background", "black");
   },
-  setStyleProperty(key: string, value: string) {
-    targetEl.style.setProperty(key, value, "important");
+  setStyleProperty(key: string, value: string, el?: HTMLElement) {
+    (el || targetEl).style.setProperty(key, value, "important");
   },
   updateStorage<Key extends keyof ChromeStorage>(
     key: Key,
@@ -193,7 +209,6 @@ const helpers = {
     storage[key] = value;
   },
 };
-
 const utils = {
   getChildIndex(node: Node) {
     return Array.prototype.indexOf.call(node.parentElement!.childNodes, node);
@@ -204,8 +219,15 @@ const utils = {
   sleep(ms: number) {
     return new Promise((resolve) => setTimeout(resolve, ms));
   },
+  isVisible(el: HTMLElement) {
+    return !!(el.offsetWidth || el.offsetHeight || el.getClientRects().length);
+  },
+  getFixedElements(sourceEl: HTMLElement) {
+    return [...sourceEl.getElementsByTagName("*")].filter(
+      (el) => getComputedStyle(el).position == "fixed"
+    ) as HTMLElement[];
+  },
 };
-
 chrome.storage.sync.get(null, (response) => {
   storage = { ...storage, ...(response as ChromeStorage) };
   document.addEventListener("wheel", listeners.onWheel, { passive: false });
