@@ -1,8 +1,4 @@
 "use strict";
-/* https://developer.mozilla.org/en-US/docs/Web/CSS/Specificity */
-/* https://specifishity.com/ */
-/* https://developer.mozilla.org/en-US/docs/Web/CSS/position */
-/* https://stackoverflow.com/a/52937920/10264782 */
 var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
     function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
     return new (P || (P = Promise))(function (resolve, reject) {
@@ -41,6 +37,10 @@ let fullscreenElStyle;
  */
 // Elements with position "fixed" problem
 let fixedElsMapped = [];
+/*
+ * Previous solution (slow): [...doc.getElementsByTagName("*")].filter((el) =>
+ * getComputedStyle(el).position == "fixed");
+ */
 /* --- */
 const listeners = {
     isCreatingScreenshot: false,
@@ -171,11 +171,16 @@ const helpers = {
         inZoom = true;
         docStyle = doc.getAttribute("style") || "";
         this.setStyleProperty("width", "100vw");
-        this.setStyleProperty("height", "100vw");
+        this.setStyleProperty("height", "100vh");
         this.setStyleProperty("overflow", "hidden");
         if (!storage.websiteInteractivity)
             this.setStyleProperty("pointer-events", "none");
-        fixedElsMapped = utils.getFixedElements(doc).map((el) => {
+        if (storage.useScreenshot)
+            return;
+        doc.setAttribute("in-zoom", doc.scrollTop + "px");
+        this.setStyleProperty("--zoom-top", doc.scrollTop + "px");
+        this.setStyleProperty("--zoom-left", doc.scrollLeft + "px");
+        fixedElsMapped = utils.getFixedElements().map((el) => {
             const elInfo = { el, style: el.getAttribute("style") || "" };
             const rect = el.getBoundingClientRect();
             this.setStyleProperty("top", rect.top + doc.scrollTop + "px", el);
@@ -190,6 +195,9 @@ const helpers = {
         inZoom = false;
         doc.setAttribute("style", docStyle);
         zoomLevel = 0;
+        if (storage.useScreenshot)
+            return;
+        doc.removeAttribute("in-zoom");
         fixedElsMapped.forEach(({ el, style }) => el.setAttribute("style", style));
     },
     isZoomReady(e) {
@@ -213,12 +221,12 @@ const helpers = {
         this.setStyleProperty("position", "fixed");
         this.setStyleProperty("top", "0");
         this.setStyleProperty("left", "0");
-        this.setStyleProperty("width", "calc(100vw)");
-        this.setStyleProperty("height", "calc(100vh)");
+        this.setStyleProperty("width", "100vw");
+        this.setStyleProperty("height", "100vh");
         this.setStyleProperty("outline", "3px solid red");
         this.setStyleProperty("box-shadow", "0 0 15px 3px red");
         this.setStyleProperty("z-index", "9999999999999999999");
-        this.setStyleProperty("background", "black");
+        this.setStyleProperty("background", "black"); // For fullscreen elements
     },
     setStyleProperty(key, value, el) {
         (el || targetEl).style.setProperty(key, value, "important");
@@ -240,8 +248,20 @@ const utils = {
     isVisible(el) {
         return !!(el.offsetWidth || el.offsetHeight || el.getClientRects().length);
     },
-    getFixedElements(sourceEl) {
-        return [...sourceEl.getElementsByTagName("*")].filter((el) => getComputedStyle(el).position == "fixed");
+    getFixedElements() {
+        let q = "[style*='position:fixed'],[style*='position: fixed']";
+        for (const { cssRules, disabled } of document.styleSheets) {
+            if (disabled)
+                continue;
+            for (const rule of cssRules) {
+                if (!(rule instanceof CSSStyleRule))
+                    continue;
+                if (rule.style.position == "fixed")
+                    q += "," + rule.selectorText;
+            }
+        }
+        console.log(q);
+        return [...doc.querySelectorAll(q)].filter((el) => getComputedStyle(el).position == "fixed");
     },
 };
 chrome.storage.sync.get(null, (response) => {
