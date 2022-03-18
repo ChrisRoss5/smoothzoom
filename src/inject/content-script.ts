@@ -28,9 +28,10 @@ let fullscreenElStyle: string;
  */
 
 // Elements with position "fixed" problem
-let fixedElsMapped: { el: HTMLElement; style: string }[] = [];
+let fixedElements: { el: HTMLElement; style: string }[] = [];
 /*
- * Previous solution (slow): [...doc.getElementsByTagName("*")].filter((el) =>
+ * Previous solution (100% working but slow):
+ * [...doc.getElementsByTagName("*")].filter((el) =>
  * getComputedStyle(el).position == "fixed");
  */
 
@@ -79,6 +80,11 @@ const listeners = {
   onKeyup(e: KeyboardEvent) {
     if (inZoom && helpers.isZoomOver(e)) control.exitZoom();
   },
+  onScroll() {
+    if (!inZoom || storage.useScreenshot) return;
+    helpers.setStyleProperty("--zoom-top", doc.scrollTop + "px");
+    helpers.setStyleProperty("--zoom-left", doc.scrollLeft + "px");
+  }
 };
 const control = {
   scale(e: WheelEvent) {
@@ -151,10 +157,10 @@ const helpers = {
     if (!storage.websiteInteractivity)
       this.setStyleProperty("pointer-events", "none");
     if (storage.useScreenshot) return;
-    doc.setAttribute("in-zoom", doc.scrollTop + "px");
+    doc.setAttribute("in-zoom", "");
     this.setStyleProperty("--zoom-top", doc.scrollTop + "px");
     this.setStyleProperty("--zoom-left", doc.scrollLeft + "px");
-    fixedElsMapped = utils.getFixedElements().map((el) => {
+    fixedElements = utils.getFixedElements().map((el) => {
       const elInfo = { el, style: el.getAttribute("style") || "" };
       const rect = el.getBoundingClientRect();
       this.setStyleProperty("top", rect.top + doc.scrollTop + "px", el);
@@ -171,7 +177,7 @@ const helpers = {
     zoomLevel = 0;
     if (storage.useScreenshot) return;
     doc.removeAttribute("in-zoom");
-    fixedElsMapped.forEach(({ el, style }) => el.setAttribute("style", style));
+    fixedElements.forEach(({ el, style }) => el.setAttribute("style", style));
   },
   isZoomReady(e: WheelEvent) {
     return (
@@ -251,6 +257,7 @@ chrome.storage.sync.get(null, (response) => {
   document.addEventListener("mouseup", listeners.onMouseup);
   document.addEventListener("contextmenu", listeners.onContextmenu);
   document.addEventListener("keyup", listeners.onKeyup);
+  document.addEventListener("scroll", listeners.onScroll);
 });
 chrome.storage.onChanged.addListener((changes) => {
   for (const key of Object.keys(changes))

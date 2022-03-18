@@ -13,4 +13,5 @@
   box-shadow: 0 0 15px 3px red !important;
   z-index: 10000000000000002000 !important;
   pointer-events: none !important;
+  transition: top 200ms, left 200ms !important;
 }
