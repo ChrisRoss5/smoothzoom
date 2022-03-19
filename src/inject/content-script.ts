@@ -1,6 +1,8 @@
-const doc = document.documentElement;
+/* For testing: http://motherfuckingwebsite.com/ */
+
+const html = document.documentElement;
 let docStyle: string;
-let targetEl = doc;
+let targetEl = html;
 let storage: ChromeStorage = {
   activationKey: "rightClick",
   websiteInteractivity: true,
@@ -11,8 +13,10 @@ let storage: ChromeStorage = {
 };
 let zoomLevel = 0;
 let inZoom = false;
+let isPreparingZoom = false;
 let isExitingZoom = false;
 let isRightClickPressed = false;
+let isDoubleClick = false;
 
 // Fullscreen problem
 let inFullscreenZoom = false;
@@ -38,23 +42,18 @@ let fixedElements: { el: HTMLElement; style: string }[] = [];
 /* --- */
 
 const listeners = {
-  isCreatingScreenshot: false,
   async onWheel(e: WheelEvent) {
     if (!(helpers.isZoomReady(e) || inZoom)) return;
     e.preventDefault();
-    if (this.isCreatingScreenshot || isExitingZoom) return;
+    if (isPreparingZoom || isExitingZoom) return;
     if (!inZoom) {
-      if (storage.useScreenshot) {
-        this.isCreatingScreenshot = true;
-        await control.createScreenshot();
-        this.isCreatingScreenshot = false;
-      }
-      helpers.enableZoom();
-    }
-    if (!inFullscreenZoom) {
+      isPreparingZoom = true;
+      if (storage.useScreenshot) await control.createScreenshot();
       fullscreenEl = document.fullscreenElement as HTMLElement;
-      if (fullscreenEl && fullscreenEl != doc)
+      if (fullscreenEl && fullscreenEl != html)
         await control.setFullscreenZoom();
+      control.enableZoom();
+      isPreparingZoom = false;
     }
     control.scale(e);
   },
@@ -69,24 +68,60 @@ const listeners = {
   onMouseup(e: MouseEvent) {
     if (isRightClickPressed && e.button == 2) {
       isRightClickPressed = false;
-      if (inZoom && storage.activationKey == "rightClick")
-        // Using setTimeout to allow onContextmenu() before inZoom == false;
-        setTimeout(control.exitZoom);
+      // Using setTimeout to allow onContextmenu() before inZoom == false;
+      if (storage.activationKey != "rightClick") return;
+      if (inZoom) setTimeout(control.exitZoom);
+      else if (isPreparingZoom) isDoubleClick = true;
     }
   },
   onContextmenu(e: Event) {
-    if (inZoom) e.preventDefault();
+    if (inZoom || isPreparingZoom) e.preventDefault();
   },
   onKeyup(e: KeyboardEvent) {
-    if (inZoom && helpers.isZoomOver(e)) control.exitZoom();
+    if (!helpers.isZoomOver(e)) return;
+    if (inZoom) control.exitZoom();
+    else if (isPreparingZoom) isDoubleClick = true;
   },
   onScroll() {
     if (!inZoom || storage.useScreenshot) return;
-    helpers.setStyleProperty("--zoom-top", doc.scrollTop + "px");
-    helpers.setStyleProperty("--zoom-left", doc.scrollLeft + "px");
-  }
+    helpers.setStyleProperty("--zoom-top", html.scrollTop + "px");
+    helpers.setStyleProperty("--zoom-left", html.scrollLeft + "px");
+  },
 };
 const control = {
+  enableZoom() {
+    inZoom = true;
+    if (storage.useScreenshot) return;
+    if (!storage.websiteInteractivity)
+      helpers.setStyleProperty("pointer-events", "none");
+    if (inFullscreenZoom) return;
+    docStyle = html.getAttribute("style") || "";
+    const { x, y } = utils.getHTMLScrollbarsWidth();
+    helpers.setStyleProperty("width", "calc(100vw - " + x + "px)");
+    helpers.setStyleProperty("height", "calc(100vh - " + y + "px)");
+    helpers.setStyleProperty("overflow", "hidden");
+    html.setAttribute("in-zoom", "");
+    helpers.setStyleProperty("--zoom-top", html.scrollTop + "px");
+    helpers.setStyleProperty("--zoom-left", html.scrollLeft + "px");
+    fixedElements = utils.getFixedElements().map((el) => {
+      const elInfo = { el, style: el.getAttribute("style") || "" };
+      const rect = el.getBoundingClientRect();
+      helpers.setStyleProperty("top", rect.top + html.scrollTop + "px", el);
+      helpers.setStyleProperty("left", rect.left + html.scrollLeft + "px", el);
+      helpers.setStyleProperty("height", rect.height + "px", el);
+      helpers.setStyleProperty("width", rect.width + "px", el);
+      helpers.setStyleProperty("transition", "none", el);
+      return elInfo;
+    });
+  },
+  disableZoom() {
+    inZoom = false;
+    zoomLevel = 0;
+    if (storage.useScreenshot || inFullscreenZoom) return;
+    html.setAttribute("style", docStyle);
+    html.removeAttribute("in-zoom");
+    fixedElements.forEach(({ el, style }) => el.setAttribute("style", style));
+  },
   scale(e: WheelEvent) {
     const zoomType = -Math.sign(e.deltaY) as -1 | 1;
     const strength = zoomType * helpers.getStrength(storage.strength);
@@ -101,32 +136,31 @@ const control = {
     const [x, y] = useClient ? [e.clientX, e.clientY] : [e.pageX, e.pageY];
     helpers.setStyleProperty("transform-origin", `${x}px ${y}px`);
   },
-  isDoubleClick: false,
   async exitZoom() {
-    if (!this.isDoubleClick && (!storage.holdToZoom || inFullscreenZoom)) {
-      this.isDoubleClick = true;
+    if (!isDoubleClick && (!storage.holdToZoom || inFullscreenZoom)) {
+      isDoubleClick = true;
       return;
     }
-    this.isDoubleClick = false;
+    isDoubleClick = false;
     isExitingZoom = true;
     helpers.setStyleProperty("transition", `transform ${storage.transition}ms`);
     helpers.setStyleProperty("transform", "none");
     if (inFullscreenZoom) await control.removeFullscreenZoom();
     else await utils.sleep(storage.transition);
-    helpers.disableZoom();
+    control.disableZoom();
     if (storage.useScreenshot) targetEl.remove();
-    targetEl = doc;
+    targetEl = html;
     isExitingZoom = false;
   },
   async setFullscreenZoom() {
     inFullscreenZoom = true;
     await document.exitFullscreen();
-    doc.requestFullscreen(); // This "eats" the first event
+    html.requestFullscreen(); // This "eats" the first event
     if (storage.useScreenshot) return;
     fullscreenElStyle = fullscreenEl.getAttribute("style") || "";
     fullscreenElParent = fullscreenEl.parentElement!;
     fullscreenElIdx = utils.getChildIndex(fullscreenEl);
-    helpers.setTargetEl(doc.appendChild(fullscreenEl));
+    helpers.setTargetEl(html.appendChild(fullscreenEl));
   },
   async removeFullscreenZoom() {
     inFullscreenZoom = false;
@@ -140,7 +174,7 @@ const control = {
     return new Promise((resolve) => {
       chrome.runtime.sendMessage("TAKE_SCREENSHOT", (dataUrl: string) => {
         const img = document.createElement("img");
-        helpers.setTargetEl(doc.appendChild(img));
+        helpers.setTargetEl(html.appendChild(img));
         img.onload = resolve;
         img.src = dataUrl;
       });
@@ -148,37 +182,6 @@ const control = {
   },
 };
 const helpers = {
-  enableZoom() {
-    inZoom = true;
-    docStyle = doc.getAttribute("style") || "";
-    this.setStyleProperty("width", "100vw");
-    this.setStyleProperty("height", "100vh");
-    this.setStyleProperty("overflow", "hidden");
-    if (!storage.websiteInteractivity)
-      this.setStyleProperty("pointer-events", "none");
-    if (storage.useScreenshot) return;
-    doc.setAttribute("in-zoom", "");
-    this.setStyleProperty("--zoom-top", doc.scrollTop + "px");
-    this.setStyleProperty("--zoom-left", doc.scrollLeft + "px");
-    fixedElements = utils.getFixedElements().map((el) => {
-      const elInfo = { el, style: el.getAttribute("style") || "" };
-      const rect = el.getBoundingClientRect();
-      this.setStyleProperty("top", rect.top + doc.scrollTop + "px", el);
-      this.setStyleProperty("left", rect.left + doc.scrollLeft + "px", el);
-      this.setStyleProperty("height", rect.height + "px", el);
-      this.setStyleProperty("width", rect.width + "px", el);
-      this.setStyleProperty("transition", "none", el);
-      return elInfo;
-    });
-  },
-  disableZoom() {
-    inZoom = false;
-    doc.setAttribute("style", docStyle);
-    zoomLevel = 0;
-    if (storage.useScreenshot) return;
-    doc.removeAttribute("in-zoom");
-    fixedElements.forEach(({ el, style }) => el.setAttribute("style", style));
-  },
   isZoomReady(e: WheelEvent) {
     return (
       (isRightClickPressed && storage.activationKey == "rightClick") ||
@@ -242,11 +245,17 @@ const utils = {
         if (rule.style.position == "fixed") q += "," + rule.selectorText;
       }
     }
-    console.log(q);
+    //console.log(q);
 
-    return [...doc.querySelectorAll(q)].filter(
+    return [...html.querySelectorAll(q)].filter(
       (el) => getComputedStyle(el).position == "fixed"
     ) as HTMLElement[];
+  },
+  getHTMLScrollbarsWidth() {
+    const { width, height } = html.getBoundingClientRect();
+    const { innerWidth, innerHeight } = window;
+    const [x, y] = [innerWidth - width, innerHeight - height];
+    return { x: Math.max(0, x), y: Math.max(0, y) };
   },
 };
 chrome.storage.sync.get(null, (response) => {
