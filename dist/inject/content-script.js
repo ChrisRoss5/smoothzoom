@@ -27,25 +27,26 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
     let isExitingZoom = false;
     let isRightClickPressed = false;
     let isDoubleClick = false;
-    // Fullscreen problem
+    /*
+     * Fullscreen problem
+     * Possible solution #2: Instead of changing fullscreenEl position in DOM, all
+     * its ancestors need to have the highest specificity style which defines values:
+     * filter, transform, backdrop-filter, perspective, contain,
+     * transform-style, content-visibility, and will-change as none.
+     */
+    //
     let inFullscreenZoom = false;
     let fullscreenEl;
     let fullscreenElParent;
     let fullscreenElIdx;
     let fullscreenElStyle;
     /*
-     * Possible solution #2: Instead of changing fullscreenEl position in DOM, all
-     * its ancestors need to have the highest specificity style which defines values:
-     * filter, transform, backdrop-filter, perspective, contain,
-     * transform-style, content-visibility, and will-change as none.
-     */
-    // Elements with position "fixed" problem
-    let fixedElements = [];
-    /*
+     * Elements with position "fixed" problem
      * Previous solution (100% working but slow):
      * [...doc.getElementsByTagName("*")].filter((el) =>
      * getComputedStyle(el).position == "fixed");
      */
+    let fixedElements = [];
     const listeners = {
         onWheel(e) {
             return __awaiter(this, void 0, void 0, function* () {

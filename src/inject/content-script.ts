@@ -17,25 +17,27 @@
   let isExitingZoom = false;
   let isRightClickPressed = false;
   let isDoubleClick = false;
-  // Fullscreen problem
+  /*
+   * Fullscreen problem
+   * Possible solution #2: Instead of changing fullscreenEl position in DOM, all
+   * its ancestors need to have the highest specificity style which defines values:
+   * filter, transform, backdrop-filter, perspective, contain,
+   * transform-style, content-visibility, and will-change as none.
+   */
+  //
   let inFullscreenZoom = false;
   let fullscreenEl: HTMLElement;
   let fullscreenElParent: HTMLElement;
   let fullscreenElIdx: number;
   let fullscreenElStyle: string;
   /*
-   * Possible solution #2: Instead of changing fullscreenEl position in DOM, all
-   * its ancestors need to have the highest specificity style which defines values:
-   * filter, transform, backdrop-filter, perspective, contain,
-   * transform-style, content-visibility, and will-change as none.
-   */
-  // Elements with position "fixed" problem
-  let fixedElements: { el: HTMLElement; style: string }[] = [];
-  /*
+   * Elements with position "fixed" problem
    * Previous solution (100% working but slow):
    * [...doc.getElementsByTagName("*")].filter((el) =>
    * getComputedStyle(el).position == "fixed");
    */
+  let fixedElements: { el: HTMLElement; style: string }[] = [];
+
   const listeners = {
     async onWheel(e: WheelEvent) {
       if (!(helpers.isZoomReady(e) || inZoom)) return;
