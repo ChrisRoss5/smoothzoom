@@ -18,7 +18,7 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
         websiteInteractivity: true,
         holdToZoom: true,
         useScreenshot: false,
-        strength: 0.5,
+        strength: 1,
         transition: 200,
     };
     let zoomLevel = 0;

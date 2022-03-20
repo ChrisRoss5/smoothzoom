@@ -14,6 +14,6 @@ type DefaultStorage = {
   websiteInteractivity: true;
   holdToZoom: true;
   useScreenshot: false;
-  strength: 1;
+  strength: 0.5;
   transition: 200;
 };

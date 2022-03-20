@@ -1,9 +1,0 @@
-/* https://developer.mozilla.org/en-US/docs/Web/CSS/Specificity */
-/* https://specifishity.com/ */
-/* https://developer.mozilla.org/en-US/docs/Web/CSS/position */
-/* https://stackoverflow.com/a/52937920/10264782 */
-:root[in-zoom] {
-  width: 100vw !important;
-  height: 100vw !important;
-  overflow: hidden !important;
-}

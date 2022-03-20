@@ -4,13 +4,29 @@
     <meta charset="UTF-8" />
     <meta http-equiv="X-UA-Compatible" content="IE=edge" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <link rel="stylesheet" href="popup.css" />
+    <link rel="stylesheet" href="../popup/popup.css" />
+    <link rel="stylesheet" href="../inject/style.css" />
+    <link rel="stylesheet" href="welcome.css" />
     <title>SmoothZoom</title>
   </head>
   <body>
+    <div id="welcome">
+      Welcome to SmoothZoom!
+      <br /><br />
+      You can access this page anytime by clicking on the SmoothZoom title from
+      the popup.
+      <br /><br />
+      Below this text is the identical version of the popup, which can be
+      accessed by clicking on the extension icon:
+      <img src="../img/icon-128.png" />
+      <br /><br />
+      Use it to find the best settings that suit you. Automatically synced to
+      your Google account. Start by experiencing SmoothZoom on this page!
+    </div>
+
     <div id="popup">
       <a id="title" class="bright" target="_blank">
-        <img src="../img/smooth-zoom.png" />
+        <img src="../img/smooth-zoom-hq.png" />
       </a>
 
       <div id="content">
@@ -107,6 +123,7 @@
       </a>
     </div>
 
-    <script src="popup.js"></script>
+    <script src="../popup/popup.js"></script>
+    <script src="../inject/content-script.js"></script>
   </body>
 </html>

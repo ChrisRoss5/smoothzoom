@@ -17,7 +17,7 @@
     "128": "img/icon-128.png"
   },
   "background": {
-    "scripts": ["service-worker.js"]
+    "scripts": ["background/service-worker.js"]
   },
   "content_scripts": [
     {
@@ -25,10 +25,10 @@
         "<all_urls>"
       ],
       "js": [
-        "content-script.js"
+        "inject/content-script.js"
       ],
       "css": [
-        "style.css"
+        "inject/style.css"
       ],
       "all_frames": true
     }

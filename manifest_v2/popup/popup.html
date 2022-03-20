@@ -8,107 +8,104 @@
     <title>SmoothZoom</title>
   </head>
   <body>
-    <a
-      id="title"
-      class="bright"
-      href="https://github.com/ChrisRoss5/SmoothZoom"
-      target="_blank"
-    >
-      <img src="../img/smooth-zoom-4.png" />
-    </a>
+    <div id="popup">
+      <a id="title" class="bright" target="_blank">
+        <img src="../img/smooth-zoom.png" />
+      </a>
 
-    <div id="content">
-      <div id="keys">
-        <label>
-          <input tabindex="-1" type="radio" name="key" key="rightClick" />
-          RClick
-        </label>
-        <label>
-          <input tabindex="-1" type="radio" name="key" key="altKey" />
-          Alt
-        </label>
-        <label>
-          <input tabindex="-1" type="radio" name="key" key="ctrlKey" />
-          Ctrl
-        </label>
-        <label>
-          <input tabindex="-1" type="radio" name="key" key="shiftKey" />
-          Shift
-        </label>
-        <div class="info">
-          Choose a key, hold it, and use mousewheel to zoom. Default: Right
-          Mouse Click (RClick)
-        </div>
-      </div>
-
-      <div class="line"></div>
-
-      <div id="options">
-        <label>
-          Website interactivity:
-          <input tabindex="-1" type="checkbox" key="websiteInteractivity" />
-          <div class="info">Enables website interactivity while in zoom.</div>
-        </label>
-        <label>
-          Hold to zoom:
-          <input tabindex="-1" type="checkbox" key="holdToZoom" />
+      <div id="content">
+        <div id="keys">
+          <label>
+            <input tabindex="-1" type="radio" name="key" key="rightClick" />
+            RClick
+          </label>
+          <label>
+            <input tabindex="-1" type="radio" name="key" key="altKey" />
+            Alt
+          </label>
+          <label>
+            <input tabindex="-1" type="radio" name="key" key="ctrlKey" />
+            Ctrl
+          </label>
+          <label>
+            <input tabindex="-1" type="radio" name="key" key="shiftKey" />
+            Shift
+          </label>
           <div class="info">
-            When disabled or in fullscreen video/element, use the chosen key
-            again to exit zoom.
+            Choose a key, hold it, and use mousewheel to zoom. Default: Right
+            Mouse Click (RClick)
+          </div>
+        </div>
+
+        <div class="line"></div>
+
+        <div id="options">
+          <label>
+            Website interactivity:
+            <input tabindex="-1" type="checkbox" key="websiteInteractivity" />
+            <div class="info">Enables website interactivity while in zoom.</div>
+          </label>
+          <label>
+            Hold to zoom:
+            <input tabindex="-1" type="checkbox" key="holdToZoom" />
+            <div class="info">
+              When disabled or in fullscreen video/element, use the chosen key
+              again to exit zoom.
+            </div>
+          </label>
+          <label>
+            Use screenshot:
+            <input tabindex="-1" type="checkbox" key="useScreenshot" />
+            <div class="info">
+              Takes a screenshot of a website, moment before it starts zooming
+              into it.
+            </div>
+          </label>
+        </div>
+
+        <div class="line"></div>
+
+        <label id="strength">
+          <div>Strength:</div>
+          <input
+            tabindex="-1"
+            type="range"
+            min="0"
+            max="1"
+            value="0.5"
+            step="any"
+            key="strength"
+          />
+          <div class="info">
+            Current multiplier:
+            <div id="strength-value">1.00</div>
+            Minimum: 0.25 Maximum: 4
           </div>
         </label>
-        <label>
-          Use screenshot:
-          <input tabindex="-1" type="checkbox" key="useScreenshot" />
+        <label id="transition">
+          <div>Transition:</div>
+          <input
+            tabindex="-1"
+            type="range"
+            min="0"
+            max="400"
+            value="200"
+            step="any"
+            key="transition"
+          />
           <div class="info">
-            Takes a screenshot of a website, moment before it starts zooming
-            into it.
+            Current duration:
+            <div id="transition-value">200ms</div>
+            Minimum: 0 Maximum: 400
           </div>
         </label>
       </div>
 
-      <div class="line"></div>
-
-      <label id="strength">
-        <div>Strength:</div>
-        <input
-          tabindex="-1"
-          type="range"
-          min="0"
-          max="1"
-          value="0.5"
-          step="any"
-          key="strength"
-        />
-        <div class="info">
-          Current multiplier:
-          <div id="strength-value">1.00</div>
-          Minimum: 0.25 Maximum: 4
-        </div>
-      </label>
-      <label id="transition">
-        <div>Transition:</div>
-        <input
-          tabindex="-1"
-          type="range"
-          min="0"
-          max="400"
-          value="200"
-          step="any"
-          key="transition"
-        />
-        <div class="info">
-          Current duration:
-          <div id="transition-value">200ms</div>
-          Minimum: 0 Maximum: 400
-        </div>
-      </label>
+      <a id="review" class="row bright" target="_blank">
+        <img src="../img/cws-logo.png" />
+        &nbsp;Write a review&nbsp;&nbsp;★★★★★
+      </a>
     </div>
-
-    <a id="review" class="row bright" target="_blank">
-      <img src="../img/cws-logo.png" />
-      &nbsp;Write a review&nbsp;&nbsp;★★★★★
-    </a>
 
     <script src="popup.js"></script>
   </body>

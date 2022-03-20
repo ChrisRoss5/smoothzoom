@@ -1,0 +1,22 @@
+body {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 50px;
+  overflow: auto;
+}
+
+#welcome {
+  width: 800px;
+  margin-bottom: 50px;
+  text-align: center;
+}
+#welcome img {
+  display: block;
+  margin: 10px auto 0;
+  width: 50px;
+}
+
+#popup {
+  box-shadow: 1px 1px 3px 2px #aeaeae;
+}

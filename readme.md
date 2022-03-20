@@ -1,15 +1,12 @@
 # SmoothZoom
 
-The smoothest page zoom on the internet.
+#### The smoothest page zoom on the internet.
 
-## How to use
+[MOUSEWHEEL REQUIRED]
 
-Todo
+Zoom anywhere, on any page, without changing the page layout!
 
-## Contributing
+> How ?
+Simply position the cursor and use the mousewheel to zoom in/out at the desired location.
 
-Pull requests are welcome. For major changes, please open an issue first to discuss what you would like to change.
-
-## License
-
-[MIT](https://choosealicense.com/licenses/mit/)
+Highly customizable with many features!
