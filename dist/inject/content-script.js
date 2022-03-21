@@ -34,7 +34,6 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
      * filter, transform, backdrop-filter, perspective, contain,
      * transform-style, content-visibility, and will-change as none.
      */
-    //
     let inFullscreenZoom = false;
     let fullscreenEl;
     let fullscreenElParent;
@@ -91,7 +90,7 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
             }
         },
         onContextmenu(e) {
-            if (inZoom || isPreparingZoom)
+            if (inZoom || isPreparingZoom || isExitingZoom)
                 e.preventDefault();
         },
         onKeyup(e) {
@@ -261,11 +260,6 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
         },
         sleep(ms) {
             return new Promise((resolve) => setTimeout(resolve, ms));
-        },
-        isVisible(el) {
-            return !!(el.offsetWidth ||
-                el.offsetHeight ||
-                el.getClientRects().length);
         },
         getFixedElements() {
             let selectors = "[style*='position:fixed'],[style*='position: fixed']";

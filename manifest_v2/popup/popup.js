@@ -5,7 +5,7 @@
         websiteInteractivity: true,
         holdToZoom: true,
         useScreenshot: false,
-        strength: 1,
+        strength: 0.5,
         transition: 200,
     };
     document.querySelector("#title").onclick = () => chrome.tabs.create({ url: "../welcome/welcome.html" });
@@ -26,18 +26,19 @@
         for (const input of document.querySelectorAll("input")) {
             const key = input.getAttribute("key");
             const { activationKey, strength, transition, useScreenshot } = storage;
-            if (key == activationKey ||
-                storage[key] === true) {
+            const value = storage[key];
+            if (key == activationKey) {
                 input.checked = true;
             }
+            else if (typeof value == "boolean") {
+                input.checked = value;
+            }
             else if (key == "strength") {
-                if (strength != undefined)
-                    input.value = strength.toFixed(2);
+                input.value = strength.toFixed(2);
                 strengthValueEl.textContent = getStrength(strength).toFixed(2);
             }
             else if (key == "transition") {
-                if (transition != undefined)
-                    input.value = transition.toString();
+                input.value = transition.toString();
                 transitionValueEl.textContent = transition + "ms";
             }
             if (useScreenshot)

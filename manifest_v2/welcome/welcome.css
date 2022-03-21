@@ -1,3 +1,12 @@
+/* html {
+  width: 100vw;
+  height: 100vh;
+  background-image: url("../img/c.png");
+  background-position: bottom;
+  background-size: 2000px;
+  background-repeat: repeat-x;
+  animation: moving-background 50s infinite linear;
+} */
 body {
   display: flex;
   flex-direction: column;
@@ -20,3 +29,12 @@ body {
 #popup {
   box-shadow: 1px 1px 3px 2px #aeaeae;
 }
+
+/* @keyframes moving-background {
+  from {
+    background-position-x: 0;
+  }
+  to {
+    background-position-x: 2000px;
+  }
+} */
