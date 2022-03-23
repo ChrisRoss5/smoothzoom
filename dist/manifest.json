@@ -2,7 +2,7 @@
   "manifest_version": 3,
   "name": "SmoothZoom",
   "version": "1.0",
-  "description": "The smoothest page zoom on the internet.",
+  "description": "Zoom anywhere, on any page, without changing the page layout!",
   "author": "Kristijan Rosandić",
   "permissions": [
     "storage"
