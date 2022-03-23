@@ -30,6 +30,45 @@ body {
   box-shadow: 1px 1px 3px 2px #aeaeae;
 }
 
+#overlay {
+  display: none;
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  opacity: 0;
+  transition: opacity 500ms;
+}
+
+#installed {
+  width: 400px;
+  margin: 50px auto;
+  background: white;
+  padding: 20px;
+  box-shadow: 1px 1px 3px 2px #505050;
+  opacity: 0;
+  transform: scale(0.8) translateY(-80px);
+  transition: opacity 250ms, transform 250ms;
+}
+#installed strong {
+  display: block;
+  font-size: 1.5rem;
+  color: lightgreen;
+  margin-bottom: 20px;
+}
+#installed button {
+  font-size: 1rem;
+  padding: 10px;
+  margin-top: 50px;
+  width: 100%;
+  background: #e5ebf7;
+  border: none;
+  box-shadow: 1px 1px 3px 2px #aeaeae;
+  cursor: pointer;
+}
+
 /* @keyframes moving-background {
   from {
     background-position-x: 0;

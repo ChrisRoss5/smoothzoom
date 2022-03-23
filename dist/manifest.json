@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "SmoothZoom – Quick Page Zoom",
-  "version": "1.0",
+  "version": "1.0.1",
   "description": "Zoom anywhere, on any page, without changing the page layout!",
   "author": "Kristijan Rosandić",
   "permissions": [

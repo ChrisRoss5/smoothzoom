@@ -2,7 +2,7 @@
 chrome.runtime.onInstalled.addListener((details) => {
     if (details.reason == chrome.runtime.OnInstalledReason.INSTALL) {
         chrome.runtime.setUninstallURL("https://forms.gle/w4wf7qwWE3ZkavhD7");
-        chrome.tabs.create({ url: "../welcome/welcome.html" });
+        chrome.tabs.create({ url: "../welcome/welcome.html#installed" });
     }
 });
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
