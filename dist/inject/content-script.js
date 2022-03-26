@@ -1,4 +1,6 @@
 "use strict";
+/* Created with Typescript & SCSS by Kristijan Rosandić */
+/* For testing: http://motherfuckingwebsite.com/ */
 var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
     function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
     return new (P || (P = Promise))(function (resolve, reject) {
@@ -8,7 +10,6 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
         step((generator = generator.apply(thisArg, _arguments || [])).next());
     });
 };
-/* For testing: http://motherfuckingwebsite.com/ */
 (() => {
     const html = document.documentElement;
     let docStyle;
@@ -52,6 +53,7 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
                 if (!(helpers.isZoomReady(e) || inZoom))
                     return;
                 e.preventDefault();
+                e.stopImmediatePropagation();
                 if (isPreparingZoom || isExitingZoom)
                     return;
                 if (!inZoom) {
@@ -90,8 +92,10 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
             }
         },
         onContextmenu(e) {
-            if (inZoom || isPreparingZoom || isExitingZoom)
+            if (inZoom || isPreparingZoom || isExitingZoom) {
                 e.preventDefault();
+                e.stopImmediatePropagation();
+            }
         },
         onKeyup(e) {
             if (!helpers.isZoomOver(e))
@@ -121,15 +125,16 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
             const { x, y } = utils.getHTMLScrollbarsWidth();
             helpers.setStyleProperty("width", "calc(100vw - " + x + "px)");
             helpers.setStyleProperty("height", "calc(100vh - " + y + "px)");
-            helpers.setStyleProperty("overflow", "hidden");
             html.setAttribute("in-zoom", "");
             helpers.setStyleProperty("--zoom-top", html.scrollTop + "px");
             helpers.setStyleProperty("--zoom-left", html.scrollLeft + "px");
             fixedElements = utils.getFixedElements().map((el) => {
                 const elInfo = { el, style: el.getAttribute("style") || "" };
                 const rect = el.getBoundingClientRect();
-                helpers.setStyleProperty("top", rect.top + html.scrollTop + "px", el);
-                helpers.setStyleProperty("left", rect.left + html.scrollLeft + "px", el);
+                const newTop = rect.top + html.scrollTop + "px";
+                const newLeft = rect.left + html.scrollLeft + "px";
+                helpers.setStyleProperty("top", newTop, el);
+                helpers.setStyleProperty("left", newLeft, el);
                 helpers.setStyleProperty("height", rect.height + "px", el);
                 helpers.setStyleProperty("width", rect.width + "px", el);
                 helpers.setStyleProperty("transition", "none", el);
@@ -150,7 +155,8 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
             const strength = zoomType * helpers.getStrength(storage.strength);
             const easeIn = (zoomType == -1 && !zoomLevel) || zoomLevel < 0;
             zoomLevel = Math.max(-0.9, zoomLevel + strength / (easeIn ? 4 : 1));
-            helpers.setStyleProperty("transition", `transform ${storage.transition}ms`);
+            const transition = `transform ${storage.transition}ms`;
+            helpers.setStyleProperty("transition", transition);
             helpers.setStyleProperty("transform", `scale(${1 + zoomLevel})`);
             this.transformOrigin(e);
         },
@@ -167,7 +173,8 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
                 }
                 isDoubleClick = false;
                 isExitingZoom = true;
-                helpers.setStyleProperty("transition", `transform ${storage.transition}ms`);
+                const transition = `transform ${storage.transition}ms`;
+                helpers.setStyleProperty("transition", transition);
                 helpers.setStyleProperty("transform", "none");
                 if (inFullscreenZoom)
                     yield control.removeFullscreenZoom();
@@ -242,7 +249,8 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
             this.setStyleProperty("outline", "3px solid red");
             this.setStyleProperty("box-shadow", "0 0 15px 3px red");
             this.setStyleProperty("z-index", "9999999999999999999");
-            this.setStyleProperty("background", "black"); // For fullscreen elements
+            if (inFullscreenZoom)
+                this.setStyleProperty("background", "black");
         },
         setStyleProperty(key, value, el) {
             (el || targetEl).style.setProperty(key, value, "important");
@@ -286,16 +294,16 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
     };
     chrome.storage.sync.get(null, (response) => {
         storage = Object.assign(Object.assign({}, storage), response);
-        document.addEventListener("wheel", listeners.onWheel, { passive: false });
-        document.addEventListener("mousemove", listeners.onMousemove);
-        document.addEventListener("mousedown", listeners.onMousedown);
-        document.addEventListener("mouseup", listeners.onMouseup);
-        document.addEventListener("contextmenu", listeners.onContextmenu);
-        document.addEventListener("keyup", listeners.onKeyup);
-        document.addEventListener("scroll", listeners.onScroll);
     });
     chrome.storage.onChanged.addListener((changes) => {
         for (const key of Object.keys(changes))
             helpers.updateStorage(key, changes[key].newValue);
     });
+    document.addEventListener("wheel", listeners.onWheel, { passive: false });
+    document.addEventListener("mousemove", listeners.onMousemove);
+    document.addEventListener("mousedown", listeners.onMousedown);
+    document.addEventListener("mouseup", listeners.onMouseup);
+    document.addEventListener("contextmenu", listeners.onContextmenu);
+    document.addEventListener("keyup", listeners.onKeyup);
+    document.addEventListener("scroll", listeners.onScroll);
 })();

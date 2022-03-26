@@ -1,4 +1,6 @@
+/* Created with Typescript & SCSS by Kristijan Rosandić */
 /* For testing: http://motherfuckingwebsite.com/ */
+
 (() => {
   const html = document.documentElement;
   let docStyle: string;
@@ -41,6 +43,7 @@
     async onWheel(e: WheelEvent) {
       if (!(helpers.isZoomReady(e) || inZoom)) return;
       e.preventDefault();
+      e.stopImmediatePropagation();
       if (isPreparingZoom || isExitingZoom) return;
       if (!inZoom) {
         isPreparingZoom = true;
@@ -71,7 +74,10 @@
       }
     },
     onContextmenu(e: Event) {
-      if (inZoom || isPreparingZoom || isExitingZoom) e.preventDefault();
+      if (inZoom || isPreparingZoom || isExitingZoom) {
+        e.preventDefault();
+        e.stopImmediatePropagation();
+      }
     },
     onKeyup(e: KeyboardEvent) {
       if (!helpers.isZoomOver(e)) return;
@@ -95,19 +101,16 @@
       const { x, y } = utils.getHTMLScrollbarsWidth();
       helpers.setStyleProperty("width", "calc(100vw - " + x + "px)");
       helpers.setStyleProperty("height", "calc(100vh - " + y + "px)");
-      helpers.setStyleProperty("overflow", "hidden");
       html.setAttribute("in-zoom", "");
       helpers.setStyleProperty("--zoom-top", html.scrollTop + "px");
       helpers.setStyleProperty("--zoom-left", html.scrollLeft + "px");
       fixedElements = utils.getFixedElements().map((el) => {
         const elInfo = { el, style: el.getAttribute("style") || "" };
         const rect = el.getBoundingClientRect();
-        helpers.setStyleProperty("top", rect.top + html.scrollTop + "px", el);
-        helpers.setStyleProperty(
-          "left",
-          rect.left + html.scrollLeft + "px",
-          el
-        );
+        const newTop = rect.top + html.scrollTop + "px";
+        const newLeft = rect.left + html.scrollLeft + "px";
+        helpers.setStyleProperty("top", newTop, el);
+        helpers.setStyleProperty("left", newLeft, el);
         helpers.setStyleProperty("height", rect.height + "px", el);
         helpers.setStyleProperty("width", rect.width + "px", el);
         helpers.setStyleProperty("transition", "none", el);
@@ -127,10 +130,8 @@
       const strength = zoomType * helpers.getStrength(storage.strength);
       const easeIn = (zoomType == -1 && !zoomLevel) || zoomLevel < 0;
       zoomLevel = Math.max(-0.9, zoomLevel + strength / (easeIn ? 4 : 1));
-      helpers.setStyleProperty(
-        "transition",
-        `transform ${storage.transition}ms`
-      );
+      const transition = `transform ${storage.transition}ms`;
+      helpers.setStyleProperty("transition", transition);
       helpers.setStyleProperty("transform", `scale(${1 + zoomLevel})`);
       this.transformOrigin(e);
     },
@@ -146,10 +147,8 @@
       }
       isDoubleClick = false;
       isExitingZoom = true;
-      helpers.setStyleProperty(
-        "transition",
-        `transform ${storage.transition}ms`
-      );
+      const transition = `transform ${storage.transition}ms`;
+      helpers.setStyleProperty("transition", transition);
       helpers.setStyleProperty("transform", "none");
       if (inFullscreenZoom) await control.removeFullscreenZoom();
       else await utils.sleep(storage.transition);
@@ -217,7 +216,7 @@
       this.setStyleProperty("outline", "3px solid red");
       this.setStyleProperty("box-shadow", "0 0 15px 3px red");
       this.setStyleProperty("z-index", "9999999999999999999");
-      this.setStyleProperty("background", "black"); // For fullscreen elements
+      if (inFullscreenZoom) this.setStyleProperty("background", "black");
     },
     setStyleProperty(key: string, value: string, el?: HTMLElement) {
       (el || targetEl).style.setProperty(key, value, "important");
@@ -261,18 +260,20 @@
       return { x: innerWidth - clientWidth, y: innerHeight - clientHeight };
     },
   };
+
   chrome.storage.sync.get(null, (response) => {
     storage = { ...storage, ...(response as ChromeStorage) };
-    document.addEventListener("wheel", listeners.onWheel, { passive: false });
-    document.addEventListener("mousemove", listeners.onMousemove);
-    document.addEventListener("mousedown", listeners.onMousedown);
-    document.addEventListener("mouseup", listeners.onMouseup);
-    document.addEventListener("contextmenu", listeners.onContextmenu);
-    document.addEventListener("keyup", listeners.onKeyup);
-    document.addEventListener("scroll", listeners.onScroll);
   });
   chrome.storage.onChanged.addListener((changes) => {
     for (const key of Object.keys(changes))
       helpers.updateStorage(key as keyof ChromeStorage, changes[key].newValue);
   });
+
+  document.addEventListener("wheel", listeners.onWheel, { passive: false });
+  document.addEventListener("mousemove", listeners.onMousemove);
+  document.addEventListener("mousedown", listeners.onMousedown);
+  document.addEventListener("mouseup", listeners.onMouseup);
+  document.addEventListener("contextmenu", listeners.onContextmenu);
+  document.addEventListener("keyup", listeners.onKeyup);
+  document.addEventListener("scroll", listeners.onScroll);
 })();
