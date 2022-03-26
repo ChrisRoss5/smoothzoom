@@ -25,6 +25,9 @@ body {
   margin: 10px auto 0;
   width: 50px;
 }
+#welcome span {
+  color: #21a0ff;
+}
 
 #popup {
   box-shadow: 1px 1px 3px 2px #aeaeae;
