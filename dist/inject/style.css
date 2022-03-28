@@ -7,6 +7,9 @@
 :root {
   will-change: width, height, transform-origin !important;
 }
+:root[no-events], :root[no-events] * {
+  pointer-events: none !important;
+}
 :root[in-zoom],
 :root[in-zoom] body {
   scrollbar-width: none !important;

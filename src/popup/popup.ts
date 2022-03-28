@@ -19,6 +19,8 @@
   const strengthValueEl = document.querySelector("#strength-value")!;
   const transitionValueEl = document.querySelector("#transition-value")!;
 
+  /* Functions */
+
   chrome.storage.sync.get(null, (response) => {
     storage = { ...storage, ...(response as ChromeStorage) };
     setInputValues();
@@ -34,7 +36,6 @@
       const key = input.getAttribute("key")!;
       const { activationKey, strength, transition, useScreenshot } = storage;
       const value = storage[key as keyof ChromeStorage];
-
       if ((key as ActivationKey) == activationKey) {
         input.checked = true;
       } else if (typeof value == "boolean") {
@@ -46,7 +47,7 @@
         input.value = transition.toString();
         transitionValueEl.textContent = transition + "ms";
       }
-      if (useScreenshot) interactivityLabel.className = "disabled";
+      interactivityLabel.className = useScreenshot ? "disabled" : "";
       input.addEventListener("click", inputClicked);
     }
   }

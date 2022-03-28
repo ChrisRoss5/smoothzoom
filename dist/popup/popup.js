@@ -13,6 +13,7 @@
     const interactivityLabel = document.querySelector("input[key='websiteInteractivity']").parentElement;
     const strengthValueEl = document.querySelector("#strength-value");
     const transitionValueEl = document.querySelector("#transition-value");
+    /* Functions */
     chrome.storage.sync.get(null, (response) => {
         storage = Object.assign(Object.assign({}, storage), response);
         setInputValues();
@@ -41,8 +42,7 @@
                 input.value = transition.toString();
                 transitionValueEl.textContent = transition + "ms";
             }
-            if (useScreenshot)
-                interactivityLabel.className = "disabled";
+            interactivityLabel.className = useScreenshot ? "disabled" : "";
             input.addEventListener("click", inputClicked);
         }
     }

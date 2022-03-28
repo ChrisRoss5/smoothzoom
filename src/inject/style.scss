@@ -8,6 +8,12 @@
 :root {
   will-change: width, height, transform-origin !important;
 
+  &[no-events] {
+    &,
+    & * {
+      pointer-events: none !important;
+    }
+  }
   &[in-zoom] {
     &,
     body {

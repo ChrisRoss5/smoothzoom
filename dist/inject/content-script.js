@@ -48,7 +48,7 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
      * https://stackoverflow.com/questions/63790794/get-css-rules-chrome-extension
      */
     let fixedElements = [];
-    /* --- Functions ---  */
+    /* Functions */
     const listeners = {
         onWheel(e) {
             return __awaiter(this, void 0, void 0, function* () {
@@ -129,11 +129,11 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
             inZoom = true;
             if (storage.useScreenshot)
                 return;
-            docStyle = html.getAttribute("style") || "";
             if (!storage.websiteInteractivity)
-                helpers.setStyleProperty("pointer-events", "none");
+                html.setAttribute("no-events", "");
             if (inFullscreenZoom)
                 return;
+            docStyle = html.getAttribute("style") || "";
             const { x, y } = utils.getHTMLScrollbarsWidth();
             helpers.setStyleProperty("width", "calc(100vw - " + x + "px)");
             helpers.setStyleProperty("height", "calc(100vh - " + y + "px)");
@@ -156,10 +156,11 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
         disableZoom() {
             inZoom = false;
             zoomLevel = 0;
+            html.removeAttribute("in-zoom");
+            html.removeAttribute("no-events");
             if (storage.useScreenshot || inFullscreenZoom)
                 return;
             html.setAttribute("style", docStyle);
-            html.removeAttribute("in-zoom");
             helpers.resetElementsStyle(fixedElements);
         },
         scale(e) {
@@ -206,7 +207,6 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
                 if (storage.useScreenshot)
                     return;
                 const ancestors = [fullscreenEl, ...utils.getAncestors(fullscreenEl)];
-                console.log(ancestors.length);
                 fullscreenElAncestors = ancestors.map((el) => {
                     const temp = { el, style: el.getAttribute("style") || "" };
                     if (el != fullscreenEl)
@@ -318,6 +318,7 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
         },
         switchToFullscreenEl(el) {
             return __awaiter(this, void 0, void 0, function* () {
+                /* https://stackoverflow.com/questions/71637367/requestfullscreen-not-working-with-modifier-keys-inside-keyup-event */
                 try {
                     yield document.exitFullscreen();
                 }
