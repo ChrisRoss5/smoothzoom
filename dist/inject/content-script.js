@@ -16,7 +16,7 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
     let targetEl = html;
     let storage = {
         activationKey: "rightClick",
-        websiteInteractivity: true,
+        websiteInteractivity: true /* https://stackoverflow.com/questions/32467151/how-to-disable-javascript-in-chrome-developer-tools-programmatically */,
         holdToZoom: true,
         useScreenshot: false,
         strength: 0.5,
@@ -29,43 +29,36 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
     let isRightClickPressed = false;
     let isDoubleClick = false;
     /*
-     * Fullscreen problem
-     * Possible solution #2: Instead of changing fullscreenEl position in DOM, all
+     * -- Fullscreen problem --
+     * Current solution: Instead of changing fullscreenEl position in DOM, all
      * its ancestors need to have the highest specificity style which defines values:
      * filter, transform, backdrop-filter, perspective, contain,
      * transform-style, content-visibility, and will-change as none.
      */
     let inFullscreenZoom = false;
     let fullscreenEl;
-    let fullscreenElParent;
-    let fullscreenElIdx;
-    let fullscreenElStyle;
+    let fullscreenElAncestors = [];
     /*
-     * Elements with position "fixed" problem
+     * -- Elements with position "fixed" problem --
      * Previous solution (100% working but slow):
-     * [...doc.getElementsByTagName("*")].filter((el) =>
-     * getComputedStyle(el).position == "fixed");
+     * [...doc.getElementsByTagName("*")].filter((el) => getComputedStyle(el).position == "fixed");
+     * Current solution:
+     * Reading CSS stylesheets, but due to CORS some might fail.
+     * Possible solution (CHROME DEBUGGER):
+     * https://stackoverflow.com/questions/63790794/get-css-rules-chrome-extension
      */
     let fixedElements = [];
+    /* --- Functions ---  */
     const listeners = {
         onWheel(e) {
             return __awaiter(this, void 0, void 0, function* () {
                 if (!(helpers.isZoomReady(e) || inZoom))
                     return;
-                e.preventDefault();
-                e.stopImmediatePropagation();
+                listeners.stop(e, true);
                 if (isPreparingZoom || isExitingZoom)
                     return;
-                if (!inZoom) {
-                    isPreparingZoom = true;
-                    if (storage.useScreenshot)
-                        yield control.createScreenshot();
-                    fullscreenEl = document.fullscreenElement;
-                    if (fullscreenEl && fullscreenEl != html)
-                        yield control.setFullscreenZoom();
-                    control.enableZoom();
-                    isPreparingZoom = false;
-                }
+                if (!inZoom)
+                    yield control.prepareZoom();
                 control.scale(e);
             });
         },
@@ -80,30 +73,30 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
                 isRightClickPressed = true;
         },
         onMouseup(e) {
-            if (isRightClickPressed && e.button == 2) {
-                isRightClickPressed = false;
-                // Using setTimeout to allow onContextmenu() before inZoom == false;
-                if (storage.activationKey != "rightClick")
-                    return;
-                if (inZoom)
-                    setTimeout(control.exitZoom);
-                else if (isPreparingZoom)
-                    isDoubleClick = true;
-            }
-        },
-        onContextmenu(e) {
-            if (inZoom || isPreparingZoom || isExitingZoom) {
-                e.preventDefault();
-                e.stopImmediatePropagation();
-            }
-        },
-        onKeyup(e) {
-            if (!helpers.isZoomOver(e))
+            if (!(isRightClickPressed && e.button == 2))
                 return;
+            isRightClickPressed = false;
+            if (storage.activationKey != "rightClick")
+                return;
+            // Using setTimeout to allow onContextmenu() before inZoom == false;
             if (inZoom)
-                control.exitZoom();
+                setTimeout(control.exitZoom);
             else if (isPreparingZoom)
                 isDoubleClick = true;
+        },
+        onContextmenu(e) {
+            listeners.stop(e);
+        },
+        onKeyup(e) {
+            return __awaiter(this, void 0, void 0, function* () {
+                if (!helpers.isZoomOver(e))
+                    return;
+                listeners.stop(e);
+                if (inZoom)
+                    control.exitZoom();
+                else if (isPreparingZoom)
+                    isDoubleClick = true;
+            });
         },
         onScroll() {
             if (!inZoom || storage.useScreenshot)
@@ -111,8 +104,27 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
             helpers.setStyleProperty("--zoom-top", html.scrollTop + "px");
             helpers.setStyleProperty("--zoom-left", html.scrollLeft + "px");
         },
+        stop(e, force) {
+            if (inZoom || isPreparingZoom || isExitingZoom || force) {
+                e.stopPropagation();
+                e.stopImmediatePropagation();
+                e.preventDefault();
+            }
+        },
     };
     const control = {
+        prepareZoom() {
+            return __awaiter(this, void 0, void 0, function* () {
+                isPreparingZoom = true;
+                if (storage.useScreenshot)
+                    yield control.createScreenshot();
+                fullscreenEl = document.fullscreenElement;
+                if (fullscreenEl && fullscreenEl != html)
+                    yield control.setFullscreenZoom();
+                control.enableZoom();
+                isPreparingZoom = false;
+            });
+        },
         enableZoom() {
             inZoom = true;
             if (storage.useScreenshot)
@@ -148,7 +160,7 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
                 return;
             html.setAttribute("style", docStyle);
             html.removeAttribute("in-zoom");
-            fixedElements.forEach(({ el, style }) => el.setAttribute("style", style));
+            helpers.resetElementsStyle(fixedElements);
         },
         scale(e) {
             const zoomType = -Math.sign(e.deltaY);
@@ -190,25 +202,27 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
         setFullscreenZoom() {
             return __awaiter(this, void 0, void 0, function* () {
                 inFullscreenZoom = true;
-                yield document.exitFullscreen();
-                html.requestFullscreen(); // This "eats" the first event
+                yield utils.switchToFullscreenEl(html); // This "eats" the first event
                 if (storage.useScreenshot)
                     return;
-                fullscreenElStyle = fullscreenEl.getAttribute("style") || "";
-                fullscreenElParent = fullscreenEl.parentElement;
-                fullscreenElIdx = utils.getChildIndex(fullscreenEl);
-                helpers.setTargetEl(html.appendChild(fullscreenEl));
+                const ancestors = [fullscreenEl, ...utils.getAncestors(fullscreenEl)];
+                console.log(ancestors.length);
+                fullscreenElAncestors = ancestors.map((el) => {
+                    const temp = { el, style: el.getAttribute("style") || "" };
+                    if (el != fullscreenEl)
+                        helpers.disableContainingBlock(el);
+                    return temp;
+                });
+                helpers.setTargetEl(fullscreenEl);
             });
         },
         removeFullscreenZoom() {
             return __awaiter(this, void 0, void 0, function* () {
                 inFullscreenZoom = false;
-                yield document.exitFullscreen();
-                fullscreenEl.requestFullscreen(); // New event is required to allow this action
+                yield utils.switchToFullscreenEl(fullscreenEl); // New event is required to allow this action
                 if (storage.useScreenshot)
                     return;
-                targetEl.setAttribute("style", fullscreenElStyle);
-                utils.insertChild(fullscreenElParent, fullscreenEl, fullscreenElIdx);
+                helpers.resetElementsStyle(fullscreenElAncestors);
             });
         },
         createScreenshot() {
@@ -255,19 +269,30 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
         setStyleProperty(key, value, el) {
             (el || targetEl).style.setProperty(key, value, "important");
         },
+        disableContainingBlock(el) {
+            this.setStyleProperty("filter", "none", el);
+            this.setStyleProperty("transform", "none", el);
+            this.setStyleProperty("backdrop-filter", "none", el);
+            this.setStyleProperty("perspective", "none", el);
+            this.setStyleProperty("contain", "none", el);
+            this.setStyleProperty("transform-style", "initial", el);
+            this.setStyleProperty("content-visibility", "initial", el);
+            this.setStyleProperty("will-change", "initial", el);
+        },
+        resetElementsStyle(elements) {
+            elements.forEach(({ el, style }) => el.setAttribute("style", style));
+        },
         updateStorage(key, value) {
             storage[key] = value;
         },
     };
     const utils = {
-        getChildIndex(node) {
-            return Array.prototype.indexOf.call(node.parentElement.childNodes, node);
-        },
-        insertChild(parent, child, idx) {
-            parent.insertBefore(child, parent.childNodes[idx]);
-        },
         sleep(ms) {
             return new Promise((resolve) => setTimeout(resolve, ms));
+        },
+        getAncestors: function* getAncestors(el) {
+            while ((el = el.parentElement))
+                yield el;
         },
         getFixedElements() {
             let selectors = "[style*='position:fixed'],[style*='position: fixed']";
@@ -291,6 +316,18 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
             const { innerWidth, innerHeight } = window;
             return { x: innerWidth - clientWidth, y: innerHeight - clientHeight };
         },
+        switchToFullscreenEl(el) {
+            return __awaiter(this, void 0, void 0, function* () {
+                try {
+                    yield document.exitFullscreen();
+                }
+                catch (_a) { }
+                try {
+                    el.requestFullscreen();
+                }
+                catch (_b) { }
+            });
+        },
     };
     chrome.storage.sync.get(null, (response) => {
         storage = Object.assign(Object.assign({}, storage), response);
@@ -299,11 +336,12 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
         for (const key of Object.keys(changes))
             helpers.updateStorage(key, changes[key].newValue);
     });
-    document.addEventListener("wheel", listeners.onWheel, { passive: false });
-    document.addEventListener("mousemove", listeners.onMousemove);
-    document.addEventListener("mousedown", listeners.onMousedown);
-    document.addEventListener("mouseup", listeners.onMouseup);
-    document.addEventListener("contextmenu", listeners.onContextmenu);
-    document.addEventListener("keyup", listeners.onKeyup);
-    document.addEventListener("scroll", listeners.onScroll);
+    const options = { passive: false, capture: true };
+    window.addEventListener("wheel", listeners.onWheel, options);
+    window.addEventListener("mousemove", listeners.onMousemove);
+    window.addEventListener("mousedown", listeners.onMousedown);
+    window.addEventListener("mouseup", listeners.onMouseup);
+    window.addEventListener("contextmenu", listeners.onContextmenu, true);
+    window.addEventListener("keyup", listeners.onKeyup, true);
+    window.addEventListener("scroll", listeners.onScroll);
 })();

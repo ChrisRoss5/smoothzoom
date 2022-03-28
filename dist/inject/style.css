@@ -3,14 +3,17 @@
 /* https://developer.mozilla.org/en-US/docs/Web/CSS/position */
 /* https://stackoverflow.com/a/52937920/10264782 */
 /* https://developer.mozilla.org/en-US/docs/Learn/Performance/CSS */
+/* https://stackoverflow.com/questions/63790794/get-css-rules-chrome-extension */
 :root {
   will-change: width, height, transform-origin !important;
 }
-:root[in-zoom] {
+:root[in-zoom],
+:root[in-zoom] body {
   scrollbar-width: none !important;
   /* Firefox */
 }
-:root[in-zoom]::-webkit-scrollbar {
+:root[in-zoom]::-webkit-scrollbar,
+:root[in-zoom] body::-webkit-scrollbar {
   display: none !important;
   /* Safari and Chrome */
 }
