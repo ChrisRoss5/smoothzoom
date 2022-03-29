@@ -37,7 +37,7 @@
             }
             else if (key == "strength") {
                 input.value = strength.toFixed(2);
-                strengthValueEl.textContent = getStrength(strength).toFixed(2);
+                strengthValueEl.textContent = (1 + getStrength(strength)).toFixed(2);
             }
             else if (key == "transition") {
                 input.value = transition.toString();
@@ -55,7 +55,7 @@
         else if (key == "strength") {
             const strength = parseFloat(this.value);
             chrome.storage.sync.set({ strength });
-            strengthValueEl.textContent = getStrength(strength).toFixed(2);
+            strengthValueEl.textContent = (1 + getStrength(strength)).toFixed(2);
         }
         else if (key == "transition") {
             const transition = Math.round(parseFloat(this.value));

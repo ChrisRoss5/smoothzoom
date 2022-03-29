@@ -8,16 +8,49 @@
   animation: moving-background 50s infinite linear;
 } */
 body {
+  @extend .flex-center;
+  overflow: hidden;
+  min-height: 100vh;
+}
+.flex-center {
   display: flex;
-  flex-direction: column;
+  justify-content: center;
   align-items: center;
-  padding: 50px;
-  overflow: auto;
+}
+
+/* specific */
+
+#box {
+  position: relative;
+  @extend .flex-center;
+  padding: 0 0 50px 50px;
+  &::before,
+  &::after {
+    content: "";
+    position: absolute;
+    left: -20px;
+  }
+  &::before {
+    top: 0;
+    bottom: 0;
+    width: 20px;
+    clip-path: polygon(100% 0, 0% 100%, 100% calc(100% - 20px));
+    background: #dbe0eb;
+    /* background: linear-gradient(268deg, #0000 50%, #0075ff 120%); */
+  }
+  &::after {
+    top: 100%;
+    right: 0;
+    height: 20px;
+    background: #8b8e94;
+    clip-path: polygon(20px 0, 0% 100%, 100% 0);
+    /* background: linear-gradient(268deg, #0000 10%, #0075ff 165%); */
+  }
 }
 #welcome {
-  width: 820px;
-  margin-bottom: 50px;
-  text-align: center;
+  width: 450px;
+  margin-right: 100px;
+  text-align: justify;
   img {
     display: block;
     margin: 10px auto 0;
@@ -40,6 +73,7 @@ body {
   background: rgba(0, 0, 0, 0.5);
   opacity: 0;
   transition: opacity 500ms;
+  z-index: 1;
 }
 #installed {
   width: 400px;
@@ -66,6 +100,12 @@ body {
     box-shadow: 1px 1px 3px 2px #aeaeae;
     cursor: pointer;
   }
+}
+#secret {
+  position: absolute;
+  top: calc(100% + 100px);
+  font-size: 50px;
+  cursor: pointer;
 }
 /* @keyframes moving-background {
   from {
