@@ -17,6 +17,7 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
     let storage = {
         activationKey: "rightClick",
         websiteInteractivity: true /* https://stackoverflow.com/questions/32467151/how-to-disable-javascript-in-chrome-developer-tools-programmatically */,
+        followCursor: true,
         holdToZoom: true,
         useScreenshot: false,
         strength: 0.5,
@@ -28,6 +29,7 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
     let isExitingZoom = false;
     let isRightClickPressed = false;
     let isDoubleClick = false;
+    let lastZoomOrigin = { x: 0, y: 0 };
     /*
      * -- Fullscreen problem --
      * Current solution: Instead of changing fullscreenEl position in DOM, all
@@ -63,10 +65,9 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
             });
         },
         onMousemove(e) {
-            if (!inZoom || isExitingZoom)
+            if (!inZoom || isExitingZoom || !storage.followCursor)
                 return;
-            helpers.setStyleProperty("transition", "none");
-            control.transformOrigin(e);
+            control.transformOrigin(e, 0);
         },
         onMousedown(e) {
             if (e.button == 2)
@@ -164,18 +165,37 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
             helpers.resetElementsStyle(fixedElements);
         },
         scale(e) {
+            const started = !zoomLevel;
             const zoomType = -Math.sign(e.deltaY);
             const strength = zoomType * helpers.getStrength(storage.strength);
-            const easeIn = (zoomType == -1 && !zoomLevel) || zoomLevel < 0;
-            zoomLevel = Math.max(-0.9, zoomLevel + strength / (easeIn ? 4 : 1));
-            const transition = `transform ${storage.transition}ms`;
-            helpers.setStyleProperty("transition", transition);
+            const divisor = zoomLevel + strength < 0 ? 10 : 1;
+            zoomLevel = Math.max(-0.9, zoomLevel + strength / divisor);
+            this.transformOrigin(e, zoomType, started);
             helpers.setStyleProperty("transform", `scale(${1 + zoomLevel})`);
-            this.transformOrigin(e);
         },
-        transformOrigin(e) {
+        transformOrigin(e, zoomType, started) {
             const useClient = storage.useScreenshot || inFullscreenZoom;
-            const [x, y] = useClient ? [e.clientX, e.clientY] : [e.pageX, e.pageY];
+            let [x, y] = useClient ? [e.clientX, e.clientY] : [e.pageX, e.pageY];
+            let transition = `transform ${storage.transition}ms`;
+            if (!storage.followCursor) {
+                const { scrollLeft, scrollTop, clientWidth, clientHeight } = targetEl;
+                if (zoomLevel < 0) {
+                    x = scrollLeft + clientWidth / 2;
+                    y = scrollTop + clientHeight / 2;
+                }
+                else if (!started) {
+                    const [lastX, lastY] = [lastZoomOrigin.x, lastZoomOrigin.y];
+                    x = lastX - ((lastX - x) / (1 + zoomLevel ** 2)) * zoomType;
+                    y = lastY - ((lastY - y) / (1 + zoomLevel ** 2)) * zoomType;
+                    const right = scrollLeft + clientWidth;
+                    const bottom = scrollTop + clientHeight;
+                    x = Math.max(scrollLeft - 3, Math.min(x, right + 3));
+                    y = Math.max(scrollTop - 3, Math.min(y, bottom + 3));
+                    transition += `, transform-origin ${storage.transition}ms`;
+                }
+                lastZoomOrigin = { x, y };
+            }
+            helpers.setStyleProperty("transition", zoomType ? transition : "none");
             helpers.setStyleProperty("transform-origin", `${x}px ${y}px`);
         },
         exitZoom() {

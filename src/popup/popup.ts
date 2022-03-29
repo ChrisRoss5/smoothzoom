@@ -2,6 +2,7 @@
   let storage = {
     activationKey: "rightClick",
     websiteInteractivity: true,
+    followCursor: true,
     holdToZoom: true,
     useScreenshot: false,
     strength: 0.5,
