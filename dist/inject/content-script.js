@@ -24,12 +24,12 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
         transition: 200,
     };
     let zoomLevel = 0;
+    let lastZoomOrigin = { x: 0, y: 0 };
     let inZoom = false;
     let isPreparingZoom = false;
     let isExitingZoom = false;
     let isRightClickPressed = false;
     let isDoubleClick = false;
-    let lastZoomOrigin = { x: 0, y: 0 };
     /*
      * -- Fullscreen problem --
      * Current solution: Instead of changing fullscreenEl position in DOM, all
@@ -56,7 +56,7 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
             return __awaiter(this, void 0, void 0, function* () {
                 if (!(helpers.isZoomReady(e) || inZoom))
                     return;
-                listeners.stop(e, true);
+                listeners.stopEvent(e, true);
                 if (isPreparingZoom || isExitingZoom)
                     return;
                 if (!inZoom)
@@ -86,13 +86,13 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
                 isDoubleClick = true;
         },
         onContextmenu(e) {
-            listeners.stop(e);
+            listeners.stopEvent(e);
         },
         onKeyup(e) {
             return __awaiter(this, void 0, void 0, function* () {
                 if (!helpers.isZoomOver(e))
                     return;
-                listeners.stop(e);
+                listeners.stopEvent(e);
                 if (inZoom)
                     control.exitZoom();
                 else if (isPreparingZoom)
@@ -105,7 +105,13 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
             helpers.setStyleProperty("--zoom-top", html.scrollTop + "px");
             helpers.setStyleProperty("--zoom-left", html.scrollLeft + "px");
         },
-        stop(e, force) {
+        onStopZoom() {
+            isDoubleClick = true;
+            control
+                .exitZoom()
+                .then(() => window.dispatchEvent(new Event("zoom-stopped")));
+        },
+        stopEvent(e, force) {
             if (inZoom || isPreparingZoom || isExitingZoom || force) {
                 e.stopPropagation();
                 e.stopImmediatePropagation();
@@ -365,4 +371,5 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
     window.addEventListener("contextmenu", listeners.onContextmenu, true);
     window.addEventListener("keyup", listeners.onKeyup, true);
     window.addEventListener("scroll", listeners.onScroll);
+    window.addEventListener("stop-zoom", listeners.onStopZoom);
 })();

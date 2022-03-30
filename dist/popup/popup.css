@@ -76,10 +76,10 @@ label input:not([type=range])::after {
 .info::before {
   content: "?";
   position: absolute;
-  left: -17px;
+  left: -24px;
   top: 50%;
   transform: translateY(-50%);
-  width: 18px;
+  width: 25px;
   height: 30px;
   line-height: 30px;
   text-align: center;
@@ -129,13 +129,17 @@ label input:not([type=range])::after {
   margin-bottom: 3px;
 }
 
+#options input {
+  margin-right: 20px;
+}
+
 #options label,
 #strength,
 #transition {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 10px 15px;
+  padding: 10px 15px 10px 20px;
 }
 
 #strength > div:first-child,
@@ -145,7 +149,7 @@ label input:not([type=range])::after {
 #strength input,
 #transition input {
   flex: 1;
-  margin-left: 20px;
+  margin: 0 20px 0 30px;
 }
 
 #strength-value,

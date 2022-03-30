@@ -10,6 +10,7 @@
 body {
   overflow: hidden;
   min-height: 100vh;
+  background-color: #202020;
 }
 
 .flex-center, #box, body {
@@ -34,7 +35,6 @@ body {
   width: 20px;
   clip-path: polygon(100% 0, 0% 100%, 100% calc(100% - 20px));
   background: #dbe0eb;
-  /* background: linear-gradient(268deg, #0000 50%, #0075ff 120%); */
 }
 #box::after {
   top: 100%;
@@ -42,7 +42,6 @@ body {
   height: 20px;
   background: #8b8e94;
   clip-path: polygon(20px 0, 0% 100%, 100% 0);
-  /* background: linear-gradient(268deg, #0000 10%, #0075ff 165%); */
 }
 
 #welcome {
@@ -75,9 +74,7 @@ body {
   transition: opacity 500ms;
   z-index: 1;
 }
-
-#installed {
-  width: 400px;
+#overlay > div {
   margin: 50px auto;
   background: white;
   padding: 20px;
@@ -86,13 +83,7 @@ body {
   transform: scale(0.8) translateY(-80px);
   transition: opacity 250ms, transform 250ms;
 }
-#installed strong {
-  display: block;
-  font-size: 1.5rem;
-  color: lightgreen;
-  margin-bottom: 20px;
-}
-#installed button {
+#overlay > div button {
   font-size: 1rem;
   padding: 10px;
   margin-top: 50px;
@@ -101,6 +92,29 @@ body {
   border: none;
   box-shadow: 1px 1px 3px 2px #aeaeae;
   cursor: pointer;
+}
+#overlay > div span {
+  color: #21a0ff;
+}
+
+#installed {
+  width: 400px;
+  display: none;
+}
+#installed strong {
+  display: block;
+  font-size: 1.5rem;
+  color: lightgreen;
+  margin-bottom: 20px;
+}
+
+#author {
+  width: 800px;
+}
+#author a {
+  display: inline;
+  color: blue;
+  text-align: left;
 }
 
 #secret {

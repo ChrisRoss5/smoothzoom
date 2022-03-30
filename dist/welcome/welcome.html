@@ -18,15 +18,36 @@
         <button>I understand</button>
       </div>
       <div id="author">
-        Hey, my name is Chris and I built this extension myself.
-        The following is a list of issues that cannot be resolved yet:
+        Hi, I'm Chris and I'm the developer of this browser extension -
+        SmoothZoom.
+        <hr />
+        Here's a list of issues that cannot be solved with current browser
+        technology:
         <ul>
-          <li></li>
-          <li></li>
+          <li>
+            <strong>&lt;iframe> elements (nested browsing contexts).</strong>
+            The extension code (content-script) is injected into all frames.
+            When you start zooming inside a frame, its parent frame cannot know
+            your cursor position. However, if you start zooming inside the
+            parent frame, all child frames won't respond to pointer events so
+            that the parent frame can always know your cursor position.
+          </li>
+          <li>
+            <strong>Running Page JavaScript.</strong>
+            When you disable <span>Website interactivity</span>, it would be a
+            great idea for the extension to disable page JavaScript. This is
+            possible with
+            <a
+              href="https://developer.chrome.com/docs/extensions/reference/contentSettings/"
+            >Content Settings API</a>. However, the content script will continue working, but the setTimeout function will not. 
+          </li>
           <li></li>
           <li></li>
           <li></li>
         </ul>
+        If you found a solution to any of these issues, contact me:
+        <a href="mailto:kristijan.ros@gmail.com">kristijan.ros@gmail.com</a>
+        <button>Close</button>
       </div>
     </div>
 
@@ -39,7 +60,7 @@
         You can access this page anytime by clicking on the SmoothZoom title
         from the popup.
         <br />
-        Alongside this text is the identical version of the popup, which can be
+        Next to this text is the identical version of the popup, which can be
         accessed by clicking on the extension icon:
         <img src="../img/icon-128.png" />
         <br />
@@ -51,7 +72,7 @@
         <ul>
           <li>Disable <span>Always follow cursor</span></li>
           <li>Disable <span>Website interactivity</span></li>
-          <li>Reduce <span>Transition</span> to 0ms</li>
+          <li>Reduce <span>Smoothness</span> to 0ms</li>
           <li>Enable <span>Use screenshot</span></li>
         </ul>
         Start by experiencing SmoothZoom on this page!
@@ -142,7 +163,7 @@
             </div>
           </label>
           <label id="transition">
-            <div>Transition:</div>
+            <div>Smoothness:</div>
             <input
               tabindex="-1"
               type="range"

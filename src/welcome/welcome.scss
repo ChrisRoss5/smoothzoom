@@ -7,10 +7,13 @@
   background-repeat: repeat-x;
   animation: moving-background 50s infinite linear;
 } */
+$blue: #21a0ff;
+
 body {
   @extend .flex-center;
   overflow: hidden;
   min-height: 100vh;
+  background-color: rgb(32, 32, 32);
 }
 .flex-center {
   display: flex;
@@ -36,7 +39,6 @@ body {
     width: 20px;
     clip-path: polygon(100% 0, 0% 100%, 100% calc(100% - 20px));
     background: #dbe0eb;
-    /* background: linear-gradient(268deg, #0000 50%, #0075ff 120%); */
   }
   &::after {
     top: 100%;
@@ -44,7 +46,6 @@ body {
     height: 20px;
     background: #8b8e94;
     clip-path: polygon(20px 0, 0% 100%, 100% 0);
-    /* background: linear-gradient(268deg, #0000 10%, #0075ff 165%); */
   }
 }
 #welcome {
@@ -57,7 +58,7 @@ body {
     width: 50px;
   }
   span {
-    color: #21a0ff;
+    color: $blue;
   }
 }
 #popup {
@@ -74,31 +75,45 @@ body {
   opacity: 0;
   transition: opacity 500ms;
   z-index: 1;
+  & > div {
+    margin: 50px auto;
+    background: white;
+    padding: 20px;
+    box-shadow: 1px 1px 3px 2px #505050;
+    opacity: 0;
+    transform: scale(0.8) translateY(-80px);
+    transition: opacity 250ms, transform 250ms;
+    button {
+      font-size: 1rem;
+      padding: 10px;
+      margin-top: 50px;
+      width: 100%;
+      background: #e5ebf7;
+      border: none;
+      box-shadow: 1px 1px 3px 2px #aeaeae;
+      cursor: pointer;
+    }
+    span {
+      color: $blue;
+    }
+  }
 }
 #installed {
   width: 400px;
-  margin: 50px auto;
-  background: white;
-  padding: 20px;
-  box-shadow: 1px 1px 3px 2px #505050;
-  opacity: 0;
-  transform: scale(0.8) translateY(-80px);
-  transition: opacity 250ms, transform 250ms;
+  display: none;
   strong {
     display: block;
     font-size: 1.5rem;
     color: lightgreen;
     margin-bottom: 20px;
   }
-  button {
-    font-size: 1rem;
-    padding: 10px;
-    margin-top: 50px;
-    width: 100%;
-    background: #e5ebf7;
-    border: none;
-    box-shadow: 1px 1px 3px 2px #aeaeae;
-    cursor: pointer;
+}
+#author {
+  width: 800px;
+  a {
+    display: inline;
+    color: blue;
+    text-align: left;
   }
 }
 #secret {

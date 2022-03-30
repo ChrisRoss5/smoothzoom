@@ -21,12 +21,12 @@ interface ElementAndStyle {
     transition: 200,
   } as DefaultStorage as ChromeStorage;
   let zoomLevel = 0;
+  let lastZoomOrigin = { x: 0, y: 0 };
   let inZoom = false;
   let isPreparingZoom = false;
   let isExitingZoom = false;
   let isRightClickPressed = false;
   let isDoubleClick = false;
-  let lastZoomOrigin = { x: 0, y: 0 };
   /*
    * -- Fullscreen problem --
    * Current solution: Instead of changing fullscreenEl position in DOM, all
@@ -53,7 +53,7 @@ interface ElementAndStyle {
   const listeners = {
     async onWheel(e: WheelEvent) {
       if (!(helpers.isZoomReady(e) || inZoom)) return;
-      listeners.stop(e, true);
+      listeners.stopEvent(e, true);
       if (isPreparingZoom || isExitingZoom) return;
       if (!inZoom) await control.prepareZoom();
       control.scale(e);
@@ -74,11 +74,11 @@ interface ElementAndStyle {
       else if (isPreparingZoom) isDoubleClick = true;
     },
     onContextmenu(e: Event) {
-      listeners.stop(e);
+      listeners.stopEvent(e);
     },
     async onKeyup(e: KeyboardEvent) {
       if (!helpers.isZoomOver(e)) return;
-      listeners.stop(e);
+      listeners.stopEvent(e);
       if (inZoom) control.exitZoom();
       else if (isPreparingZoom) isDoubleClick = true;
     },
@@ -87,7 +87,13 @@ interface ElementAndStyle {
       helpers.setStyleProperty("--zoom-top", html.scrollTop + "px");
       helpers.setStyleProperty("--zoom-left", html.scrollLeft + "px");
     },
-    stop(e: Event, force?: boolean) {
+    onStopZoom() {
+      isDoubleClick = true;
+      control
+        .exitZoom()
+        .then(() => window.dispatchEvent(new Event("zoom-stopped")));
+    },
+    stopEvent(e: Event, force?: boolean) {
       if (inZoom || isPreparingZoom || isExitingZoom || force) {
         e.stopPropagation();
         e.stopImmediatePropagation();
@@ -328,4 +334,5 @@ interface ElementAndStyle {
   window.addEventListener("contextmenu", listeners.onContextmenu, true);
   window.addEventListener("keyup", listeners.onKeyup, true);
   window.addEventListener("scroll", listeners.onScroll);
+  window.addEventListener("stop-zoom", listeners.onStopZoom);
 })();

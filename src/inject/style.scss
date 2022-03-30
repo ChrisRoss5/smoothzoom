@@ -15,6 +15,9 @@
     }
   }
   &[in-zoom] {
+    iframe {
+      pointer-events: none !important;
+    }
     &,
     body {
       scrollbar-width: none !important; /* Firefox */

@@ -1,40 +1,46 @@
 "use strict";
-var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
-    function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
-    return new (P || (P = Promise))(function (resolve, reject) {
-        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
-        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
-        function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
-        step((generator = generator.apply(thisArg, _arguments || [])).next());
-    });
-};
-(() => {
-    const overlayEl = document.querySelector("#overlay");
-    const secretEl = document.querySelector("#secret");
-    const authorEl = secretEl.querySelector("#author");
-    secretEl.onclick = () => __awaiter(void 0, void 0, void 0, function* () {
-        showOverlay().then(() => {
-            authorEl.style.opacity = "1";
-            authorEl.style.transform = "none";
-            buttonEl.onclick = () => overlayEl.remove();
-        });
-    });
-    if (location.hash != "#installed")
-        return;
-    location.hash = "";
-    const installedEl = overlayEl.firstElementChild;
-    const buttonEl = installedEl.querySelector("button");
+const overlayEl = document.querySelector("#overlay");
+const secretEl = document.querySelector("#secret");
+const authorEl = document.querySelector("#author");
+const closeAuthorEl = authorEl.querySelector("button");
+if (location.hash == "#installed")
+    showWelcome();
+secretEl.onclick = stopZoom;
+showAuthor();
+function showWelcome() {
+    //todo location.hash = "";
+    const installedEl = overlayEl.querySelector("#installed");
+    const closeWelcomeEl = installedEl.querySelector("button");
+    installedEl.style.display = "block";
     showOverlay().then(() => {
         installedEl.style.opacity = "1";
         installedEl.style.transform = "none";
-        buttonEl.onclick = () => overlayEl.remove();
+        closeWelcomeEl.onclick = () => {
+            installedEl.remove();
+            hideOverlay();
+        };
     });
-    function showOverlay() {
-        return new Promise(res => {
-            overlayEl.style.display = "block";
-            overlayEl.offsetWidth; // NOSONAR
-            overlayEl.style.opacity = "1";
-            setTimeout(() => res, 250);
-        });
-    }
-})();
+}
+function stopZoom() {
+    window.addEventListener("zoom-stopped", showAuthor, { once: true });
+    window.dispatchEvent(new Event("stop-zoom"));
+}
+function showAuthor() {
+    showOverlay().then(() => {
+        authorEl.style.opacity = "1";
+        authorEl.style.transform = "none";
+        closeAuthorEl.onclick = hideOverlay;
+    });
+}
+function showOverlay() {
+    return new Promise((resolve) => {
+        overlayEl.style.display = "block";
+        overlayEl.offsetWidth; // NOSONAR
+        overlayEl.style.opacity = "1";
+        setTimeout(resolve, 250);
+    });
+}
+function hideOverlay() {
+    overlayEl.style.opacity = "0";
+    overlayEl.style.display = "none";
+}
