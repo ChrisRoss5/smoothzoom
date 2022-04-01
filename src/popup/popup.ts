@@ -1,27 +1,24 @@
 (() => {
+  const titleEl = document.querySelector("#title") as HTMLElement;
+  const reviewEl = document.querySelector("#review") as HTMLAnchorElement;
+  const strengthValueEl = document.querySelector("#strength-value")!;
+  const transitionValueEl = document.querySelector("#transition-value")!;
+  titleEl.onclick = () =>
+    chrome.tabs.create({ url: "../welcome/welcome.html" });
+  reviewEl.href = `https://chrome.google.com/webstore/detail/${chrome.runtime.id}/reviews`;
+
+  /* Storage */
+
   let storage = {
     activationKey: "rightClick",
-    websiteInteractivity: true,
-    followCursor: true,
     holdToZoom: true,
+    alwaysFollowCursor: true,
+    disableInteractivity: false,
+    disableJavascript: false,
     useScreenshot: false,
     strength: 0.5,
     transition: 200,
   } as DefaultStorage as ChromeStorage;
-
-  (document.querySelector("#title") as HTMLElement).onclick = () =>
-    chrome.tabs.create({ url: "../welcome/welcome.html" });
-  (
-    document.querySelector("#review") as HTMLAnchorElement
-  ).href = `https://chrome.google.com/webstore/detail/${chrome.runtime.id}/reviews`;
-  const interactivityLabel = document.querySelector(
-    "input[key='websiteInteractivity']"
-  )!.parentElement!;
-  const strengthValueEl = document.querySelector("#strength-value")!;
-  const transitionValueEl = document.querySelector("#transition-value")!;
-
-  /* Functions */
-
   chrome.storage.sync.get(null, (response) => {
     storage = { ...storage, ...(response as ChromeStorage) };
     setInputValues();
@@ -32,24 +29,25 @@
     setInputValues();
   });
 
+  /* Functions */
+
   function setInputValues() {
-    for (const input of document.querySelectorAll("input")) {
-      const key = input.getAttribute("key")!;
-      const { activationKey, strength, transition, useScreenshot } = storage;
+    for (const inputEl of document.querySelectorAll("input")) {
+      const key = inputEl.getAttribute("key")!;
+      const { activationKey, strength, transition } = storage;
       const value = storage[key as keyof ChromeStorage];
-      if ((key as ActivationKey) == activationKey) {
-        input.checked = true;
+      if (key == activationKey) {
+        inputEl.checked = true;
       } else if (typeof value == "boolean") {
-        input.checked = value;
+        inputEl.checked = value;
       } else if (key == "strength") {
-        input.value = strength.toFixed(2);
+        inputEl.value = strength.toFixed(2);
         strengthValueEl.textContent = (1 + getStrength(strength)).toFixed(2);
       } else if (key == "transition") {
-        input.value = transition.toString();
+        inputEl.value = transition.toString();
         transitionValueEl.textContent = transition + "ms";
       }
-      interactivityLabel.className = useScreenshot ? "disabled" : "";
-      input.addEventListener("click", inputClicked);
+      inputEl.addEventListener("click", inputClicked);
     }
   }
   function inputClicked(this: HTMLInputElement) {
@@ -65,10 +63,22 @@
       chrome.storage.sync.set({ transition });
       transitionValueEl.textContent = transition + "ms";
     } else {
-      chrome.storage.sync.set({ [key]: this.checked });
-      if (key == "useScreenshot")
-        interactivityLabel.className = this.checked ? "disabled" : "";
+      if (key == "disableJavascript") toggleJavascript(this);
+      else chrome.storage.sync.set({ [key]: this.checked });
     }
+  }
+  function toggleJavascript(inputEl: HTMLInputElement) {
+    const disableJavascript = inputEl.checked;
+    const permissions = ["contentSettings"];
+    /* https://developer.chrome.com/docs/extensions/reference/permissions */
+    chrome.permissions.contains({ permissions }, (contains) => {
+      if (contains) chrome.storage.sync.set({ disableJavascript });
+      else
+        chrome.permissions.request({ permissions }, (granted) => {
+          if (granted) chrome.storage.sync.set({ disableJavascript });
+          else inputEl.checked = false;
+        });
+    });
   }
 
   /* Shared functions from content-script */

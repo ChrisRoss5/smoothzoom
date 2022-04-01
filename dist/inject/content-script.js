@@ -16,9 +16,10 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
     let targetEl = html;
     let storage = {
         activationKey: "rightClick",
-        websiteInteractivity: true /* https://stackoverflow.com/questions/32467151/how-to-disable-javascript-in-chrome-developer-tools-programmatically */,
-        followCursor: true,
         holdToZoom: true,
+        alwaysFollowCursor: true,
+        disableInteractivity: false,
+        disableJavascript: false,
         useScreenshot: false,
         strength: 0.5,
         transition: 200,
@@ -65,7 +66,7 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
             });
         },
         onMousemove(e) {
-            if (!inZoom || isExitingZoom || !storage.followCursor)
+            if (!inZoom || isExitingZoom || !storage.alwaysFollowCursor)
                 return;
             control.transformOrigin(e, 0);
         },
@@ -86,7 +87,8 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
                 isDoubleClick = true;
         },
         onContextmenu(e) {
-            listeners.stopEvent(e);
+            if (storage.activationKey == "rightClick")
+                listeners.stopEvent(e);
         },
         onKeyup(e) {
             return __awaiter(this, void 0, void 0, function* () {
@@ -123,6 +125,8 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
         prepareZoom() {
             return __awaiter(this, void 0, void 0, function* () {
                 isPreparingZoom = true;
+                if (storage.disableJavascript)
+                    yield control.toggleJavascript(false);
                 if (storage.useScreenshot)
                     yield control.createScreenshot();
                 fullscreenEl = document.fullscreenElement;
@@ -134,11 +138,9 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
         },
         enableZoom() {
             inZoom = true;
-            if (storage.useScreenshot)
-                return;
-            if (!storage.websiteInteractivity)
+            if (storage.disableInteractivity)
                 html.setAttribute("no-events", "");
-            if (inFullscreenZoom)
+            if (storage.useScreenshot || inFullscreenZoom)
                 return;
             docStyle = html.getAttribute("style") || "";
             const { x, y } = utils.getHTMLScrollbarsWidth();
@@ -163,11 +165,11 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
         disableZoom() {
             inZoom = false;
             zoomLevel = 0;
-            html.removeAttribute("in-zoom");
             html.removeAttribute("no-events");
             if (storage.useScreenshot || inFullscreenZoom)
                 return;
             html.setAttribute("style", docStyle);
+            html.removeAttribute("in-zoom");
             helpers.resetElementsStyle(fixedElements);
         },
         scale(e) {
@@ -183,7 +185,7 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
             const useClient = storage.useScreenshot || inFullscreenZoom;
             let [x, y] = useClient ? [e.clientX, e.clientY] : [e.pageX, e.pageY];
             let transition = `transform ${storage.transition}ms`;
-            if (!storage.followCursor) {
+            if (!storage.alwaysFollowCursor) {
                 const { scrollLeft, scrollTop, clientWidth, clientHeight } = targetEl;
                 if (zoomLevel < 0) {
                     x = scrollLeft + clientWidth / 2;
@@ -219,6 +221,8 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
                     yield control.removeFullscreenZoom();
                 else
                     yield utils.sleep(storage.transition);
+                if (storage.disableJavascript)
+                    yield control.toggleJavascript(true);
                 control.disableZoom();
                 if (storage.useScreenshot)
                     targetEl.remove();
@@ -253,12 +257,22 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
         },
         createScreenshot() {
             return new Promise((resolve) => {
-                chrome.runtime.sendMessage("TAKE_SCREENSHOT", (dataUrl) => {
+                const request = { message: "TAKE_SCREENSHOT" };
+                chrome.runtime.sendMessage(request, (dataUrl) => {
                     const img = document.createElement("img");
                     helpers.setTargetEl(html.appendChild(img));
                     img.onload = resolve;
                     img.src = dataUrl;
                 });
+            });
+        },
+        toggleJavascript(enable) {
+            return new Promise((resolve) => {
+                const request = {
+                    message: "TOGGLE_JAVASCRIPT",
+                    details: { enable, primaryPattern: location.origin + "/*" },
+                };
+                chrome.runtime.sendMessage(request, resolve);
             });
         },
     };

@@ -18,8 +18,9 @@
         <button>I understand</button>
       </div>
       <div id="author">
-        Hi, I'm Chris and I'm the developer of this browser extension -
-        SmoothZoom.
+        <strong>
+          Hi! I'm a solo developer of SmoothZoom browser extension.
+        </strong>
         <hr />
         Here's a list of issues that cannot be solved with current browser
         technology:
@@ -39,7 +40,9 @@
             possible with
             <a
               href="https://developer.chrome.com/docs/extensions/reference/contentSettings/"
-            >Content Settings API</a>. However, the content script will continue working, but the setTimeout function will not. 
+              >Content Settings API</a
+            >. However, the content script will continue working, but the
+            setTimeout function will not.
           </li>
           <li></li>
           <li></li>
@@ -70,10 +73,11 @@
         For low-end PCs or heavy websites, try making these changes in the
         following order:
         <ul>
-          <li>Disable <span>Always follow cursor</span></li>
-          <li>Disable <span>Website interactivity</span></li>
+          <li>Uncheck <span>Always follow cursor</span></li>
+          <li>Check <span>Disable interactivity</span></li>
+          <li>Check <span>Disable JavaScript</span></li>
           <li>Reduce <span>Smoothness</span> to 0ms</li>
-          <li>Enable <span>Use screenshot</span></li>
+          <li>Check <span>Use screenshot</span></li>
         </ul>
         Start by experiencing SmoothZoom on this page!
       </div>
@@ -111,26 +115,35 @@
 
           <div id="options">
             <label>
-              Website interactivity:
-              <input tabindex="-1" type="checkbox" key="websiteInteractivity" />
+              Hold to zoom:
+              <input tabindex="-1" type="checkbox" key="holdToZoom" />
               <div class="info">
-                Enables website interactivity while in zoom.
+                When disabled or in fullscreen video/element, use the chosen key
+                again to exit zoom.
               </div>
             </label>
             <label>
               Always follow cursor:
-              <input tabindex="-1" type="checkbox" key="followCursor" />
+              <input tabindex="-1" type="checkbox" key="alwaysFollowCursor" />
               <div class="info">
                 Allows a viewport to always follow the mouse cursor while in
                 zoom.
               </div>
             </label>
             <label>
-              Hold to zoom:
-              <input tabindex="-1" type="checkbox" key="holdToZoom" />
+              Disable interactivity:
+              <input tabindex="-1" type="checkbox" key="disableInteractivity" />
               <div class="info">
-                When disabled or in fullscreen video/element, use the chosen key
-                again to exit zoom.
+                Disables website's interactivity (CSS pointer-events) while in
+                zoom.
+              </div>
+            </label>
+            <label>
+              Disable JavaScript:
+              <input tabindex="-1" type="checkbox" key="disableJavascript" />
+              <div class="info">
+                Disables website's JavaScript while in zoom.<br />This prevents
+                potential content adjusting.
               </div>
             </label>
             <label>

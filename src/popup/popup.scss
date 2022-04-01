@@ -20,10 +20,6 @@ a {
 }
 label {
   position: relative;
-  &.disabled {
-    opacity: 0.5;
-    pointer-events: none;
-  }
   &:hover {
     cursor: pointer;
     input::after {
@@ -94,7 +90,7 @@ label {
 /* specific */
 
 #popup {
-  width: 356px;
+  width: 369px;
   background-image: url("../img/circles.png");
   background-color: white;
   background-size: cover;
@@ -125,16 +121,13 @@ label {
     margin-bottom: 3px;
   }
 }
-#options input {
-  margin-right: 20px;
-}
 #options label,
 #strength,
 #transition {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 10px 15px 10px 20px;
+  padding: 10px 35px 10px 20px;
 }
 #strength,
 #transition {
@@ -143,7 +136,7 @@ label {
   }
   input {
     flex: 1;
-    margin: 0 20px 0 30px;
+    margin-left: 30px;
   }
 }
 #strength-value,

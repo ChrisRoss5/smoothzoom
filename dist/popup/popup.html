@@ -41,23 +41,35 @@
 
         <div id="options">
           <label>
-            Website interactivity:
-            <input tabindex="-1" type="checkbox" key="websiteInteractivity" />
-            <div class="info">Enables website interactivity while in zoom.</div>
-          </label>
-          <label>
-            Always follow cursor:
-            <input tabindex="-1" type="checkbox" key="followCursor" />
-            <div class="info">
-              Allows a viewport to always follow the mouse cursor while in zoom.
-            </div>
-          </label>
-          <label>
             Hold to zoom:
             <input tabindex="-1" type="checkbox" key="holdToZoom" />
             <div class="info">
               When disabled or in fullscreen video/element, use the chosen key
               again to exit zoom.
+            </div>
+          </label>
+          <label>
+            Always follow cursor:
+            <input tabindex="-1" type="checkbox" key="alwaysFollowCursor" />
+            <div class="info">
+              Allows a viewport to always follow the mouse cursor while in
+              zoom.
+            </div>
+          </label>
+          <label>
+            Disable interactivity:
+            <input tabindex="-1" type="checkbox" key="disableInteractivity" />
+            <div class="info">
+              Disables website's interactivity (CSS pointer-events) while in
+              zoom.
+            </div>
+          </label>
+          <label>
+            Disable JavaScript:
+            <input tabindex="-1" type="checkbox" key="disableJavascript" />
+            <div class="info">
+              Disables website's JavaScript while in zoom.<br />This prevents
+              potential content adjusting.
             </div>
           </label>
           <label>

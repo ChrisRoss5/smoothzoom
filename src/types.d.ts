@@ -2,9 +2,10 @@ type ActivationKey = "rightClick" | "altKey" | "ctrlKey" | "shiftKey";
 
 interface ChromeStorage {
   activationKey: ActivationKey;
-  websiteInteractivity: boolean;
-  followCursor: boolean;
   holdToZoom: boolean;
+  alwaysFollowCursor: boolean;
+  disableInteractivity: boolean;
+  disableJavascript: boolean;
   useScreenshot: boolean;
   strength: number;
   transition: number;
@@ -12,9 +13,10 @@ interface ChromeStorage {
 
 type DefaultStorage = {
   activationKey: "rightClick";
-  websiteInteractivity: true;
-  followCursor: true;
   holdToZoom: true;
+  alwaysFollowCursor: true;
+  disableInteractivity: false;
+  disableJavascript: false;
   useScreenshot: false;
   strength: 0.5;
   transition: 200;

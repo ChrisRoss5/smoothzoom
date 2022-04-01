@@ -51,7 +51,7 @@ body {
 }
 #welcome img {
   display: block;
-  margin: 10px auto 0;
+  margin: 20px auto 10px;
   width: 50px;
 }
 #welcome span {

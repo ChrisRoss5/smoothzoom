@@ -12,10 +12,10 @@ interface ElementAndStyle {
   let targetEl = html;
   let storage = {
     activationKey: "rightClick",
-    websiteInteractivity:
-      true /* https://stackoverflow.com/questions/32467151/how-to-disable-javascript-in-chrome-developer-tools-programmatically */,
-    followCursor: true,
     holdToZoom: true,
+    alwaysFollowCursor: true,
+    disableInteractivity: false,
+    disableJavascript: false,
     useScreenshot: false,
     strength: 0.5,
     transition: 200,
@@ -59,7 +59,7 @@ interface ElementAndStyle {
       control.scale(e);
     },
     onMousemove(e: MouseEvent) {
-      if (!inZoom || isExitingZoom || !storage.followCursor) return;
+      if (!inZoom || isExitingZoom || !storage.alwaysFollowCursor) return;
       control.transformOrigin(e, 0);
     },
     onMousedown(e: MouseEvent) {
@@ -74,7 +74,7 @@ interface ElementAndStyle {
       else if (isPreparingZoom) isDoubleClick = true;
     },
     onContextmenu(e: Event) {
-      listeners.stopEvent(e);
+      if (storage.activationKey == "rightClick") listeners.stopEvent(e);
     },
     async onKeyup(e: KeyboardEvent) {
       if (!helpers.isZoomOver(e)) return;
@@ -104,6 +104,7 @@ interface ElementAndStyle {
   const control = {
     async prepareZoom() {
       isPreparingZoom = true;
+      if (storage.disableJavascript) await control.toggleJavascript(false);
       if (storage.useScreenshot) await control.createScreenshot();
       fullscreenEl = document.fullscreenElement as HTMLElement;
       if (fullscreenEl && fullscreenEl != html)
@@ -113,9 +114,8 @@ interface ElementAndStyle {
     },
     enableZoom() {
       inZoom = true;
-      if (storage.useScreenshot) return;
-      if (!storage.websiteInteractivity) html.setAttribute("no-events", "");
-      if (inFullscreenZoom) return;
+      if (storage.disableInteractivity) html.setAttribute("no-events", "");
+      if (storage.useScreenshot || inFullscreenZoom) return;
       docStyle = html.getAttribute("style") || "";
       const { x, y } = utils.getHTMLScrollbarsWidth();
       helpers.setStyleProperty("width", "calc(100vw - " + x + "px)");
@@ -139,10 +139,10 @@ interface ElementAndStyle {
     disableZoom() {
       inZoom = false;
       zoomLevel = 0;
-      html.removeAttribute("in-zoom");
       html.removeAttribute("no-events");
       if (storage.useScreenshot || inFullscreenZoom) return;
       html.setAttribute("style", docStyle);
+      html.removeAttribute("in-zoom");
       helpers.resetElementsStyle(fixedElements);
     },
     scale(e: WheelEvent) {
@@ -158,7 +158,7 @@ interface ElementAndStyle {
       const useClient = storage.useScreenshot || inFullscreenZoom;
       let [x, y] = useClient ? [e.clientX, e.clientY] : [e.pageX, e.pageY];
       let transition = `transform ${storage.transition}ms`;
-      if (!storage.followCursor) {
+      if (!storage.alwaysFollowCursor) {
         const { scrollLeft, scrollTop, clientWidth, clientHeight } = targetEl;
         if (zoomLevel < 0) {
           x = scrollLeft + clientWidth / 2;
@@ -190,6 +190,7 @@ interface ElementAndStyle {
       helpers.setStyleProperty("transform", "none");
       if (inFullscreenZoom) await control.removeFullscreenZoom();
       else await utils.sleep(storage.transition);
+      if (storage.disableJavascript) await control.toggleJavascript(true);
       control.disableZoom();
       if (storage.useScreenshot) targetEl.remove();
       targetEl = html;
@@ -215,12 +216,22 @@ interface ElementAndStyle {
     },
     createScreenshot() {
       return new Promise((resolve) => {
-        chrome.runtime.sendMessage("TAKE_SCREENSHOT", (dataUrl: string) => {
+        const request = { message: "TAKE_SCREENSHOT" };
+        chrome.runtime.sendMessage(request, (dataUrl: string) => {
           const img = document.createElement("img");
           helpers.setTargetEl(html.appendChild(img));
           img.onload = resolve;
           img.src = dataUrl;
         });
+      });
+    },
+    toggleJavascript(enable: boolean) {
+      return new Promise<void>((resolve) => {
+        const request = {
+          message: "TOGGLE_JAVASCRIPT",
+          details: { enable, primaryPattern: location.origin + "/*" },
+        };
+        chrome.runtime.sendMessage(request, resolve);
       });
     },
   };

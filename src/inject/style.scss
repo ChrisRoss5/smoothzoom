@@ -7,7 +7,6 @@
 
 :root {
   will-change: width, height, transform-origin !important;
-
   &[no-events] {
     &,
     & * {
