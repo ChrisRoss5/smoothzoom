@@ -15,18 +15,13 @@ chrome.runtime.onMessage.addListener(
     else if (request.message == "TOGGLE_JAVASCRIPT") {
       /* https://developer.chrome.com/docs/extensions/reference/contentSettings/#property-javascript */
       if (request.details.enable) {
-        chrome.contentSettings.javascript.clear(
-          { scope: "regular" },
-          sendResponse
-        );
+        chrome.contentSettings.javascript.clear({}, sendResponse);
       } else {
-        chrome.contentSettings.javascript.set(
-          {
-            primaryPattern: request.details.primaryPattern,
-            setting: "block",
-          },
-          sendResponse
-        );
+        const setDetails = {
+          primaryPattern: request.details.primaryPattern,
+          setting: "block",
+        } as chrome.contentSettings.JavascriptSetDetails;
+        chrome.contentSettings.javascript.set(setDetails, sendResponse);
       }
     }
 

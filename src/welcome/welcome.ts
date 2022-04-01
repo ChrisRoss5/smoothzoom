@@ -5,7 +5,7 @@ const closeAuthorEl = authorEl.querySelector("button") as HTMLElement;
 
 if (location.hash == "#installed") showWelcome();
 secretEl.onclick = stopZoom;
-//showAuthor();
+showAuthor();
 
 function showWelcome() {
   //todo location.hash = "";

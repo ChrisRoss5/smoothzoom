@@ -79,6 +79,7 @@
           else inputEl.checked = false;
         });
     });
+    /* "optional_permissions": [ "contentSettings" ], */
   }
 
   /* Shared functions from content-script */

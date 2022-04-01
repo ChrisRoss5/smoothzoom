@@ -6,7 +6,7 @@ const closeAuthorEl = authorEl.querySelector("button");
 if (location.hash == "#installed")
     showWelcome();
 secretEl.onclick = stopZoom;
-//showAuthor();
+showAuthor();
 function showWelcome() {
     //todo location.hash = "";
     const installedEl = overlayEl.querySelector("#installed");

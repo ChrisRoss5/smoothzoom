@@ -7,9 +7,6 @@
   "permissions": [
     "storage"
   ],
-  "optional_permissions": [
-    "contentSettings"
-  ],
   "host_permissions": [
     "<all_urls>"
   ],

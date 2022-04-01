@@ -5,7 +5,7 @@ interface ChromeStorage {
   holdToZoom: boolean;
   alwaysFollowCursor: boolean;
   disableInteractivity: boolean;
-  disableJavascript: boolean;
+  disableJavascript: boolean; // todo-feature
   useScreenshot: boolean;
   strength: number;
   transition: number;

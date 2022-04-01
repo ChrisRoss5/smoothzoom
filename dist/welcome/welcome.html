@@ -28,24 +28,25 @@
           <li>
             <strong>&lt;iframe> elements (nested browsing contexts).</strong>
             The extension code (content-script) is injected into all frames.
-            When you start zooming inside a frame, its parent frame cannot know
-            your cursor position. However, if you start zooming inside the
-            parent frame, all child frames won't respond to pointer events so
-            that the parent frame can always know your cursor position.
+            When you zoom inside a frame, its parent frame cannot know your
+            cursor position. However, if you zoom inside the parent frame, the
+            extension disables pointer events from all child frames, so that the
+            parent frame can always know your cursor position.
           </li>
           <li>
-            <strong>Running Page JavaScript.</strong>
-            When you disable <span>Website interactivity</span>, it would be a
-            great idea for the extension to disable page JavaScript. This is
-            possible with
+            <strong>Toggling JavaScript.</strong>
+            It is possible to toggle Javascript with
             <a
               href="https://developer.chrome.com/docs/extensions/reference/contentSettings/"
               >Content Settings API</a
-            >. However, the content script will continue working, but the
-            setTimeout function will not.
+            >. However, it is not possible to do so without reloading the page.
+            Another problem is that the API toggles JavaScript for ALL pages
+            that match the given location origin. DevTools Debugger has the
+            option to toggle JavaScript instantly, per tab, but there is no way
+            to access it programmatically. Zooming with temporarily disabled
+            JavaScript prevents potential content adjusting and could improve
+            performance significantly.
           </li>
-          <li></li>
-          <li></li>
           <li></li>
         </ul>
         If you found a solution to any of these issues, contact me:
@@ -75,7 +76,7 @@
         <ul>
           <li>Uncheck <span>Always follow cursor</span></li>
           <li>Check <span>Disable interactivity</span></li>
-          <li>Check <span>Disable JavaScript</span></li>
+          <!-- <li>Check <span>Disable JavaScript</span></li> -->
           <li>Reduce <span>Smoothness</span> to 0ms</li>
           <li>Check <span>Use screenshot</span></li>
         </ul>
@@ -134,18 +135,18 @@
               Disable interactivity:
               <input tabindex="-1" type="checkbox" key="disableInteractivity" />
               <div class="info">
-                Disables website's interactivity (CSS pointer-events) while in
+                Disables website interactivity (CSS pointer-events) while in
                 zoom.
               </div>
             </label>
-            <label>
+            <!-- <label>
               Disable JavaScript:
               <input tabindex="-1" type="checkbox" key="disableJavascript" />
               <div class="info">
-                Disables website's JavaScript while in zoom.<br />This prevents
+                Disables website JavaScript while in zoom.<br />This prevents
                 potential content adjusting.
               </div>
-            </label>
+            </label> -->
             <label>
               Use screenshot:
               <input tabindex="-1" type="checkbox" key="useScreenshot" />
