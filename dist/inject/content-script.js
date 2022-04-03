@@ -1,15 +1,6 @@
 "use strict";
 /* Created with Typescript & SCSS by Kristijan Rosandić */
 /* For testing: http://motherfuckingwebsite.com/ */
-var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
-    function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
-    return new (P || (P = Promise))(function (resolve, reject) {
-        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
-        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
-        function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
-        step((generator = generator.apply(thisArg, _arguments || [])).next());
-    });
-};
 (() => {
     const html = document.documentElement;
     let docStyle;
@@ -61,17 +52,15 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
     });
     /* Functions */
     const listeners = {
-        onWheel(e) {
-            return __awaiter(this, void 0, void 0, function* () {
-                if (!(helpers.isZoomReady(e) || inZoom))
-                    return;
-                listeners.stopEvent(e, true);
-                if (isPreparingZoom || isExitingZoom)
-                    return;
-                if (!inZoom)
-                    yield control.prepareZoom();
-                control.scale(e);
-            });
+        async onWheel(e) {
+            if (!(helpers.isZoomReady(e) || inZoom))
+                return;
+            listeners.stopEvent(e, true);
+            if (isPreparingZoom || isExitingZoom)
+                return;
+            if (!inZoom)
+                await control.prepareZoom();
+            control.scale(e);
         },
         onMousemove(e) {
             if (!inZoom || isExitingZoom || !storage.alwaysFollowCursor)
@@ -98,16 +87,14 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
             if (storage.activationKey == "rightClick")
                 listeners.stopEvent(e);
         },
-        onKeyup(e) {
-            return __awaiter(this, void 0, void 0, function* () {
-                if (!helpers.isZoomOver(e))
-                    return;
-                listeners.stopEvent(e);
-                if (inZoom)
-                    control.exitZoom();
-                else if (isPreparingZoom)
-                    isDoubleClick = true;
-            });
+        async onKeyup(e) {
+            if (!helpers.isZoomOver(e))
+                return;
+            listeners.stopEvent(e);
+            if (inZoom)
+                control.exitZoom();
+            else if (isPreparingZoom)
+                isDoubleClick = true;
         },
         onScroll() {
             if (!inZoom || storage.useScreenshot)
@@ -121,10 +108,15 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
                 .exitZoom()
                 .then(() => window.dispatchEvent(new Event("zoom-stopped")));
         },
-        onFrameMessage(e) {
-            console.log(e);
+        onMessage(e) {
+            if (!e.data.isCustomEvent)
+                return;
+            const frameElement = e.source;
+            console.log(frameElement);
         },
         stopEvent(e, force) {
+            if ("isCustomEvent" in e)
+                return;
             if (inZoom || isPreparingZoom || isExitingZoom || force) {
                 e.stopPropagation();
                 e.stopImmediatePropagation();
@@ -133,19 +125,17 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
         },
     };
     const control = {
-        prepareZoom() {
-            return __awaiter(this, void 0, void 0, function* () {
-                isPreparingZoom = true;
-                if (storage.disableJavascript)
-                    yield control.toggleJavascript(false);
-                if (storage.useScreenshot)
-                    yield control.createScreenshot();
-                fullscreenEl = document.fullscreenElement;
-                if (fullscreenEl && fullscreenEl != html)
-                    yield control.setFullscreenZoom();
-                control.enableZoom();
-                isPreparingZoom = false;
-            });
+        async prepareZoom() {
+            isPreparingZoom = true;
+            if (storage.disableJavascript)
+                await control.toggleJavascript(false);
+            if (storage.useScreenshot)
+                await control.createScreenshot();
+            fullscreenEl = document.fullscreenElement;
+            if (fullscreenEl && fullscreenEl != html)
+                await control.setFullscreenZoom();
+            control.enableZoom();
+            isPreparingZoom = false;
         },
         enableZoom() {
             inZoom = true;
@@ -217,54 +207,48 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
             helpers.setStyleProperty("transition", zoomType ? transition : "none");
             helpers.setStyleProperty("transform-origin", `${x}px ${y}px`);
         },
-        exitZoom() {
-            return __awaiter(this, void 0, void 0, function* () {
-                if (!isDoubleClick && (!storage.holdToZoom || inFullscreenZoom)) {
-                    isDoubleClick = true;
-                    return;
-                }
-                isDoubleClick = false;
-                isExitingZoom = true;
-                const transition = `transform ${storage.transition}ms`;
-                helpers.setStyleProperty("transition", transition);
-                helpers.setStyleProperty("transform", "none");
-                if (inFullscreenZoom)
-                    yield control.removeFullscreenZoom();
-                else
-                    yield utils.sleep(storage.transition);
-                if (storage.disableJavascript)
-                    yield control.toggleJavascript(true);
-                control.disableZoom();
-                if (storage.useScreenshot)
-                    targetEl.remove();
-                targetEl = html;
-                isExitingZoom = false;
-            });
+        async exitZoom() {
+            if (!isDoubleClick && (!storage.holdToZoom || inFullscreenZoom)) {
+                isDoubleClick = true;
+                return;
+            }
+            isDoubleClick = false;
+            isExitingZoom = true;
+            const transition = `transform ${storage.transition}ms`;
+            helpers.setStyleProperty("transition", transition);
+            helpers.setStyleProperty("transform", "none");
+            if (inFullscreenZoom)
+                await control.removeFullscreenZoom();
+            else
+                await utils.sleep(storage.transition);
+            if (storage.disableJavascript)
+                await control.toggleJavascript(true);
+            control.disableZoom();
+            if (storage.useScreenshot)
+                targetEl.remove();
+            targetEl = html;
+            isExitingZoom = false;
         },
-        setFullscreenZoom() {
-            return __awaiter(this, void 0, void 0, function* () {
-                inFullscreenZoom = true;
-                yield utils.switchToFullscreenEl(html); // This "eats" the first event
-                if (storage.useScreenshot)
-                    return;
-                const ancestors = [fullscreenEl, ...utils.getAncestors(fullscreenEl)];
-                fullscreenElAncestors = ancestors.map((el) => {
-                    const temp = { el, style: el.getAttribute("style") || "" };
-                    if (el != fullscreenEl)
-                        helpers.disableContainingBlock(el);
-                    return temp;
-                });
-                helpers.setTargetEl(fullscreenEl);
+        async setFullscreenZoom() {
+            inFullscreenZoom = true;
+            await utils.switchToFullscreenEl(html); // This "eats" the first event
+            if (storage.useScreenshot)
+                return;
+            const ancestors = [fullscreenEl, ...utils.getAncestors(fullscreenEl)];
+            fullscreenElAncestors = ancestors.map((el) => {
+                const temp = { el, style: el.getAttribute("style") || "" };
+                if (el != fullscreenEl)
+                    helpers.disableContainingBlock(el);
+                return temp;
             });
+            helpers.setTargetEl(fullscreenEl);
         },
-        removeFullscreenZoom() {
-            return __awaiter(this, void 0, void 0, function* () {
-                inFullscreenZoom = false;
-                yield utils.switchToFullscreenEl(fullscreenEl); // New event is required to allow this action
-                if (storage.useScreenshot)
-                    return;
-                helpers.resetElementsStyle(fullscreenElAncestors);
-            });
+        async removeFullscreenZoom() {
+            inFullscreenZoom = false;
+            await utils.switchToFullscreenEl(fullscreenEl); // New event is required to allow this action
+            if (storage.useScreenshot)
+                return;
+            helpers.resetElementsStyle(fullscreenElAncestors);
         },
         createScreenshot() {
             return new Promise((resolve) => {
@@ -367,18 +351,16 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
             const { innerWidth, innerHeight } = window;
             return { x: innerWidth - clientWidth, y: innerHeight - clientHeight };
         },
-        switchToFullscreenEl(el) {
-            return __awaiter(this, void 0, void 0, function* () {
-                /* https://stackoverflow.com/questions/71637367/requestfullscreen-not-working-with-modifier-keys-inside-keyup-event */
-                try {
-                    yield document.exitFullscreen();
-                }
-                catch (_a) { }
-                try {
-                    el.requestFullscreen();
-                }
-                catch (_b) { }
-            });
+        async switchToFullscreenEl(el) {
+            /* https://stackoverflow.com/questions/71637367/requestfullscreen-not-working-with-modifier-keys-inside-keyup-event */
+            try {
+                await document.exitFullscreen();
+            }
+            catch (_a) { }
+            try {
+                el.requestFullscreen();
+            }
+            catch (_b) { }
         },
     };
     const options = { passive: false, capture: true };
@@ -390,5 +372,5 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
     window.addEventListener("keyup", listeners.onKeyup, true);
     window.addEventListener("scroll", listeners.onScroll);
     window.addEventListener("stop-zoom", listeners.onStopZoom);
-    window.addEventListener('message', listeners.onFrameMessage, false);
+    window.addEventListener("message", listeners.onMessage);
 })();

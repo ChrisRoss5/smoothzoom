@@ -1,13 +1,12 @@
 if (window.parent != window) contentScript();
 
 function contentScript() {
-/*   const state = {
-inZoom: false,
-isPreparingZoom: false,
-isExitingZoom: false,
-isRightClickPressed: false,
-isDoubleClick: false,
-  } */
+  let state = {
+    inZoom: false,
+    isExitingZoom: false,
+    isPreparingZoom: false,
+    isRightClickPressed: false,
+  };
 
   /* Storage */
 
@@ -31,58 +30,43 @@ isDoubleClick: false,
 
   /* Functions */
 
-  const messenger = {
-    bubble(message: any) {
-      window.parent.postMessage(message);
-    },
-    capture(message: any) {
-
-    }
-  }
-
   const listeners = {
-    async onWheel(e: WheelEvent) {
-      if (!(helpers.isZoomReady(e) || inZoom)) return;
+    onWheel(e: WheelEvent) {
+      if (!(helpers.isZoomReady(e) || state.inZoom)) return;
       listeners.stopEvent(e, true);
-      if (isPreparingZoom || isExitingZoom) return;
-      if (!inZoom) await control.prepareZoom();
-      control.scale(e);
+      messenger.propagateUp(
+        "wheel",
+        utils.pick(e, [
+          "altKey",
+          "ctrlKey",
+          "shiftKey",
+          "deltaY",
+          "clientX",
+          "clientY",
+        ])
+      );
     },
     onMousemove(e: MouseEvent) {
-      if (!inZoom || isExitingZoom || !storage.alwaysFollowCursor) return;
-      control.transformOrigin(e, 0);
+      if (!state.inZoom || state.isExitingZoom || !storage.alwaysFollowCursor)
+        return;
+      messenger.propagateUp("mousemove", utils.pick(e, ["clientX", "clientY"]));
     },
     onMousedown(e: MouseEvent) {
-      if (e.button == 2) isRightClickPressed = true;
+      messenger.propagateUp("mousedown", { button: e.button });
     },
     onMouseup(e: MouseEvent) {
-      if (!(isRightClickPressed && e.button == 2)) return;
-      isRightClickPressed = false;
-      if (storage.activationKey != "rightClick") return;
-      // Using setTimeout to allow onContextmenu() before inZoom == false;
-      if (inZoom) setTimeout(control.exitZoom);
-      else if (isPreparingZoom) isDoubleClick = true;
+      messenger.propagateUp("mouseup", { button: e.button });
     },
     onContextmenu(e: Event) {
       if (storage.activationKey == "rightClick") listeners.stopEvent(e);
     },
-    async onKeyup(e: KeyboardEvent) {
+    onKeyup(e: KeyboardEvent) {
       if (!helpers.isZoomOver(e)) return;
       listeners.stopEvent(e);
-      if (inZoom) control.exitZoom();
-      else if (isPreparingZoom) isDoubleClick = true;
-    },
-    onStopZoom() {
-      isDoubleClick = true;
-      control
-        .exitZoom()
-        .then(() => window.dispatchEvent(new Event("zoom-stopped")));
-    },
-    onFrameMessage(e: MessageEvent) {
-      console.log(e);
+      messenger.propagateUp("keyup", { key: e.key });
     },
     stopEvent(e: Event, force?: boolean) {
-      if (inZoom || isPreparingZoom || isExitingZoom || force) {
+      if (Object.values(state).some((x) => x) || force) {
         e.stopPropagation();
         e.stopImmediatePropagation();
         e.preventDefault();
@@ -92,7 +76,7 @@ isDoubleClick: false,
   const helpers = {
     isZoomReady(e: WheelEvent) {
       return (
-        (isRightClickPressed && storage.activationKey == "rightClick") ||
+        (state.isRightClickPressed && storage.activationKey == "rightClick") ||
         (e.altKey && storage.activationKey == "altKey") ||
         (e.ctrlKey && storage.activationKey == "ctrlKey") ||
         (e.shiftKey && storage.activationKey == "shiftKey")
@@ -112,6 +96,37 @@ isDoubleClick: false,
       storage[key] = value;
     },
   };
+  const utils = {
+    pick<T extends object, U extends keyof T>(
+      obj: T,
+      paths: Array<U>
+    ): Pick<T, U> {
+      const ret = Object.create(null);
+      for (const k of paths) {
+        ret[k] = obj[k];
+      }
+      return ret;
+    },
+  };
+  const messenger = {
+    propagateUp(
+      listener: string,
+      event: Partial<MouseEvent | WheelEvent | KeyboardEvent>
+    ) {
+      (event as any).isCustomEvent = true;
+      window.parent.postMessage({ listener, event });
+    },
+    propagateDown(message: any) {},
+    onMessage(message: MessageEvent) {
+      console.log(message);
+
+      if (message.data.isCustomEvent) {
+        const frameElement = e.source as any;
+
+        //this.propagateUp();
+      }
+    },
+  };
 
   const options = { passive: false, capture: true };
   window.addEventListener("wheel", listeners.onWheel, options);
@@ -120,6 +135,5 @@ isDoubleClick: false,
   window.addEventListener("mouseup", listeners.onMouseup);
   window.addEventListener("contextmenu", listeners.onContextmenu, true);
   window.addEventListener("keyup", listeners.onKeyup, true);
-  window.addEventListener("stop-zoom", listeners.onStopZoom);
-  window.addEventListener("message", listeners.onFrameMessage, false);
+  window.addEventListener("message", messenger.onMessage);
 }

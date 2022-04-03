@@ -103,10 +103,13 @@ interface ElementAndStyle {
         .exitZoom()
         .then(() => window.dispatchEvent(new Event("zoom-stopped")));
     },
-    onFrameMessage(e: MessageEvent) {
-      console.log(e);
+    onMessage(e: MessageEvent) {
+      if (!e.data.isCustomEvent) return;
+      const frameElement = e.source as any;
+      console.log(frameElement);
     },
     stopEvent(e: Event, force?: boolean) {
+      if ("isCustomEvent" in e) return;
       if (inZoom || isPreparingZoom || isExitingZoom || force) {
         e.stopPropagation();
         e.stopImmediatePropagation();
@@ -351,5 +354,5 @@ interface ElementAndStyle {
   window.addEventListener("keyup", listeners.onKeyup, true);
   window.addEventListener("scroll", listeners.onScroll);
   window.addEventListener("stop-zoom", listeners.onStopZoom);
-  window.addEventListener('message', listeners.onFrameMessage, false);
+  window.addEventListener("message", listeners.onMessage);
 })();
