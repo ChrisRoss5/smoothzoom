@@ -26,13 +26,22 @@
       "matches": [
         "<all_urls>"
       ],
-      "run_at": "document_start",
       "js": [
         "inject/content-script.js"
       ],
       "css": [
         "inject/style.css"
       ],
+      "run_at": "document_start"
+    },
+    {
+      "matches": [
+        "<all_urls>"
+      ],
+      "js": [
+        "inject/frame-messenger.js"
+      ],
+      "run_at": "document_start",
       "all_frames": true
     }
   ]

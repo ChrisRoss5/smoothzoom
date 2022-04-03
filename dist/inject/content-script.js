@@ -14,16 +14,6 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
     const html = document.documentElement;
     let docStyle;
     let targetEl = html;
-    let storage = {
-        activationKey: "rightClick",
-        holdToZoom: true,
-        alwaysFollowCursor: true,
-        disableInteractivity: false,
-        disableJavascript: false,
-        useScreenshot: false,
-        strength: 0.5,
-        transition: 200,
-    };
     let zoomLevel = 0;
     let lastZoomOrigin = { x: 0, y: 0 };
     let inZoom = false;
@@ -51,6 +41,24 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
      * https://stackoverflow.com/questions/63790794/get-css-rules-chrome-extension
      */
     let fixedElements = [];
+    /* Storage */
+    let storage = {
+        activationKey: "rightClick",
+        holdToZoom: true,
+        alwaysFollowCursor: true,
+        disableInteractivity: false,
+        disableJavascript: false,
+        useScreenshot: false,
+        strength: 0.5,
+        transition: 200,
+    };
+    chrome.storage.sync.get(null, (response) => {
+        storage = Object.assign(Object.assign({}, storage), response);
+    });
+    chrome.storage.onChanged.addListener((changes) => {
+        for (const key of Object.keys(changes))
+            helpers.updateStorage(key, changes[key].newValue);
+    });
     /* Functions */
     const listeners = {
         onWheel(e) {
@@ -112,6 +120,9 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
             control
                 .exitZoom()
                 .then(() => window.dispatchEvent(new Event("zoom-stopped")));
+        },
+        onFrameMessage(e) {
+            console.log(e);
         },
         stopEvent(e, force) {
             if (inZoom || isPreparingZoom || isExitingZoom || force) {
@@ -370,13 +381,6 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
             });
         },
     };
-    chrome.storage.sync.get(null, (response) => {
-        storage = Object.assign(Object.assign({}, storage), response);
-    });
-    chrome.storage.onChanged.addListener((changes) => {
-        for (const key of Object.keys(changes))
-            helpers.updateStorage(key, changes[key].newValue);
-    });
     const options = { passive: false, capture: true };
     window.addEventListener("wheel", listeners.onWheel, options);
     window.addEventListener("mousemove", listeners.onMousemove);
@@ -386,4 +390,5 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
     window.addEventListener("keyup", listeners.onKeyup, true);
     window.addEventListener("scroll", listeners.onScroll);
     window.addEventListener("stop-zoom", listeners.onStopZoom);
+    window.addEventListener('message', listeners.onFrameMessage, false);
 })();

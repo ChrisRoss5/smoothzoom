@@ -10,16 +10,6 @@ interface ElementAndStyle {
   const html = document.documentElement;
   let docStyle: string;
   let targetEl = html;
-  let storage = {
-    activationKey: "rightClick",
-    holdToZoom: true,
-    alwaysFollowCursor: true,
-    disableInteractivity: false,
-    disableJavascript: false,
-    useScreenshot: false,
-    strength: 0.5,
-    transition: 200,
-  } as DefaultStorage as ChromeStorage;
   let zoomLevel = 0;
   let lastZoomOrigin = { x: 0, y: 0 };
   let inZoom = false;
@@ -47,6 +37,26 @@ interface ElementAndStyle {
    * https://stackoverflow.com/questions/63790794/get-css-rules-chrome-extension
    */
   let fixedElements: ElementAndStyle[] = [];
+
+  /* Storage */
+
+  let storage = {
+    activationKey: "rightClick",
+    holdToZoom: true,
+    alwaysFollowCursor: true,
+    disableInteractivity: false,
+    disableJavascript: false,
+    useScreenshot: false,
+    strength: 0.5,
+    transition: 200,
+  } as DefaultStorage as ChromeStorage;
+  chrome.storage.sync.get(null, (response) => {
+    storage = { ...storage, ...(response as ChromeStorage) };
+  });
+  chrome.storage.onChanged.addListener((changes) => {
+    for (const key of Object.keys(changes))
+      helpers.updateStorage(key as keyof ChromeStorage, changes[key].newValue);
+  });
 
   /* Functions */
 
@@ -92,6 +102,9 @@ interface ElementAndStyle {
       control
         .exitZoom()
         .then(() => window.dispatchEvent(new Event("zoom-stopped")));
+    },
+    onFrameMessage(e: MessageEvent) {
+      console.log(e);
     },
     stopEvent(e: Event, force?: boolean) {
       if (inZoom || isPreparingZoom || isExitingZoom || force) {
@@ -329,14 +342,6 @@ interface ElementAndStyle {
     },
   };
 
-  chrome.storage.sync.get(null, (response) => {
-    storage = { ...storage, ...(response as ChromeStorage) };
-  });
-  chrome.storage.onChanged.addListener((changes) => {
-    for (const key of Object.keys(changes))
-      helpers.updateStorage(key as keyof ChromeStorage, changes[key].newValue);
-  });
-
   const options = { passive: false, capture: true };
   window.addEventListener("wheel", listeners.onWheel, options);
   window.addEventListener("mousemove", listeners.onMousemove);
@@ -346,4 +351,5 @@ interface ElementAndStyle {
   window.addEventListener("keyup", listeners.onKeyup, true);
   window.addEventListener("scroll", listeners.onScroll);
   window.addEventListener("stop-zoom", listeners.onStopZoom);
+  window.addEventListener('message', listeners.onFrameMessage, false);
 })();
