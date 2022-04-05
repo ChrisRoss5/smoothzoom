@@ -7,11 +7,27 @@
     let targetEl = html;
     let zoomLevel = 0;
     let lastZoomOrigin = { x: 0, y: 0 };
-    let inZoom = false;
-    let isPreparingZoom = false;
-    let isExitingZoom = false;
-    let isRightClickPressed = false;
     let isDoubleClick = false;
+    /*
+    -- Iframes problem --
+    */
+    const sharedState = {
+        inZoom: false,
+        isPreparingZoom: false,
+        isExitingZoom: false,
+        isRightClickPressed: false,
+    };
+    const state = new Proxy(sharedState, {
+        set: function (target, key, value) {
+            target[key] = value;
+            for (const frame of document.querySelectorAll("frame, iframe")) {
+                const { contentWindow } = frame;
+                if (contentWindow)
+                    contentWindow.postMessage(target);
+            }
+            return true;
+        },
+    });
     /*
      * -- Fullscreen problem --
      * Current solution: Instead of changing fullscreenEl position in DOM, all
@@ -53,34 +69,34 @@
     /* Functions */
     const listeners = {
         async onWheel(e) {
-            if (!(helpers.isZoomReady(e) || inZoom))
+            if (!(helpers.isZoomReady(e) || state.inZoom))
                 return;
             listeners.stopEvent(e, true);
-            if (isPreparingZoom || isExitingZoom)
+            if (state.isPreparingZoom || state.isExitingZoom)
                 return;
-            if (!inZoom)
+            if (!state.inZoom)
                 await control.prepareZoom();
             control.scale(e);
         },
         onMousemove(e) {
-            if (!inZoom || isExitingZoom || !storage.alwaysFollowCursor)
+            if (!state.inZoom || state.isExitingZoom || !storage.alwaysFollowCursor)
                 return;
             control.transformOrigin(e, 0);
         },
         onMousedown(e) {
             if (e.button == 2)
-                isRightClickPressed = true;
+                state.isRightClickPressed = true;
         },
         onMouseup(e) {
-            if (!(isRightClickPressed && e.button == 2))
+            if (!(state.isRightClickPressed && e.button == 2))
                 return;
-            isRightClickPressed = false;
+            state.isRightClickPressed = false;
             if (storage.activationKey != "rightClick")
                 return;
-            // Using setTimeout to allow onContextmenu() before inZoom == false;
-            if (inZoom)
+            // Using setTimeout to allow onContextmenu() before state.inZoom == false;
+            if (state.inZoom)
                 setTimeout(control.exitZoom);
-            else if (isPreparingZoom)
+            else if (state.isPreparingZoom)
                 isDoubleClick = true;
         },
         onContextmenu(e) {
@@ -91,13 +107,13 @@
             if (!helpers.isZoomOver(e))
                 return;
             listeners.stopEvent(e);
-            if (inZoom)
+            if (state.inZoom)
                 control.exitZoom();
-            else if (isPreparingZoom)
+            else if (state.isPreparingZoom)
                 isDoubleClick = true;
         },
         onScroll() {
-            if (!inZoom || storage.useScreenshot)
+            if (!state.inZoom || storage.useScreenshot)
                 return;
             helpers.setStyleProperty("--zoom-top", html.scrollTop + "px");
             helpers.setStyleProperty("--zoom-left", html.scrollLeft + "px");
@@ -108,15 +124,29 @@
                 .exitZoom()
                 .then(() => window.dispatchEvent(new Event("zoom-stopped")));
         },
-        onMessage(e) {
-            if (!e.data.isCustomEvent)
+        onMessage({ data: messageData }) {
+            if (!messageData.listener)
                 return;
-            const frameElement = e.source;
-            console.log(frameElement);
+            /* Shared code begin */
+            console.log(messageData.event.clientX, messageData.event.clientY);
+            if (["onWheel", "onMousemove"].includes(messageData.listener))
+                for (const frame of document.querySelectorAll("frame, iframe")) {
+                    {
+                        if (frame.contentWindow.customFrameId == messageData.frameId) {
+                            const { x, y } = frame.getBoundingClientRect();
+                            messageData.event.clientX += x;
+                            messageData.event.clientY += y;
+                            break;
+                        }
+                    }
+                }
+            /* Shared code end */
+            listeners[messageData.listener](messageData.event);
         },
         stopEvent(e, force) {
             if ("isCustomEvent" in e)
                 return;
+            const { inZoom, isPreparingZoom, isExitingZoom } = state;
             if (inZoom || isPreparingZoom || isExitingZoom || force) {
                 e.stopPropagation();
                 e.stopImmediatePropagation();
@@ -126,7 +156,7 @@
     };
     const control = {
         async prepareZoom() {
-            isPreparingZoom = true;
+            state.isPreparingZoom = true;
             if (storage.disableJavascript)
                 await control.toggleJavascript(false);
             if (storage.useScreenshot)
@@ -135,10 +165,10 @@
             if (fullscreenEl && fullscreenEl != html)
                 await control.setFullscreenZoom();
             control.enableZoom();
-            isPreparingZoom = false;
+            state.isPreparingZoom = false;
         },
         enableZoom() {
-            inZoom = true;
+            state.inZoom = true;
             if (storage.disableInteractivity)
                 html.setAttribute("no-events", "");
             if (storage.useScreenshot || inFullscreenZoom)
@@ -164,7 +194,7 @@
             });
         },
         disableZoom() {
-            inZoom = false;
+            state.inZoom = false;
             zoomLevel = 0;
             html.removeAttribute("no-events");
             if (storage.useScreenshot || inFullscreenZoom)
@@ -184,10 +214,19 @@
         },
         transformOrigin(e, zoomType, started) {
             const useClient = storage.useScreenshot || inFullscreenZoom;
-            let [x, y] = useClient ? [e.clientX, e.clientY] : [e.pageX, e.pageY];
+            const { scrollLeft, scrollTop, clientWidth, clientHeight } = targetEl;
+            let x, y;
+            if (useClient) {
+                [x, y] = [e.clientX, e.clientY];
+            }
+            else if ("isCustomEvent" in e) {
+                [x, y] = [e.clientX + scrollLeft, e.clientY + scrollTop];
+            }
+            else {
+                [x, y] = [e.pageX, e.pageY];
+            }
             let transition = `transform ${storage.transition}ms`;
             if (!storage.alwaysFollowCursor) {
-                const { scrollLeft, scrollTop, clientWidth, clientHeight } = targetEl;
                 if (zoomLevel < 0) {
                     x = scrollLeft + clientWidth / 2;
                     y = scrollTop + clientHeight / 2;
@@ -213,7 +252,7 @@
                 return;
             }
             isDoubleClick = false;
-            isExitingZoom = true;
+            state.isExitingZoom = true;
             const transition = `transform ${storage.transition}ms`;
             helpers.setStyleProperty("transition", transition);
             helpers.setStyleProperty("transform", "none");
@@ -227,7 +266,7 @@
             if (storage.useScreenshot)
                 targetEl.remove();
             targetEl = html;
-            isExitingZoom = false;
+            state.isExitingZoom = false;
         },
         async setFullscreenZoom() {
             inFullscreenZoom = true;
@@ -273,7 +312,7 @@
     };
     const helpers = {
         isZoomReady(e) {
-            return ((isRightClickPressed && storage.activationKey == "rightClick") ||
+            return ((state.isRightClickPressed && storage.activationKey == "rightClick") ||
                 (e.altKey && storage.activationKey == "altKey") ||
                 (e.ctrlKey && storage.activationKey == "ctrlKey") ||
                 (e.shiftKey && storage.activationKey == "shiftKey"));

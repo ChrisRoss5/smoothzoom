@@ -11,7 +11,7 @@ interface ChromeStorage {
   transition: number;
 }
 
-type DefaultStorage = {
+interface DefaultStorage {
   activationKey: "rightClick";
   holdToZoom: true;
   alwaysFollowCursor: true;
@@ -20,4 +20,10 @@ type DefaultStorage = {
   useScreenshot: false;
   strength: 0.5;
   transition: 200;
-};
+}
+
+interface MessageData {
+  listener: "onWheel" | "onMousemove" | "onMousedown" | "onMouseup" | "onKeyup";
+  event: any;
+  frameId?: number;
+}

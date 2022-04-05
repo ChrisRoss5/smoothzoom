@@ -10,8 +10,10 @@
 :root[no-events], :root[no-events] * {
   pointer-events: none !important;
 }
-:root[in-zoom] iframe {
-  pointer-events: none !important;
+:root[in-zoom] {
+  /* iframe {
+    pointer-events: none !important;
+  } */
 }
 :root[in-zoom],
 :root[in-zoom] body {

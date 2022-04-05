@@ -1,10 +1,12 @@
-if (window.parent != window) contentScript();
+if (window != window.top) contentScript();
+
+const thisFrameId = ((window as any).customFrameId = Math.random());
 
 function contentScript() {
   let state = {
     inZoom: false,
-    isExitingZoom: false,
     isPreparingZoom: false,
+    isExitingZoom: false,
     isRightClickPressed: false,
   };
 
@@ -34,8 +36,8 @@ function contentScript() {
     onWheel(e: WheelEvent) {
       if (!(helpers.isZoomReady(e) || state.inZoom)) return;
       listeners.stopEvent(e, true);
-      messenger.propagateUp(
-        "wheel",
+      messenger.createMessage(
+        "onWheel",
         utils.pick(e, [
           "altKey",
           "ctrlKey",
@@ -49,13 +51,16 @@ function contentScript() {
     onMousemove(e: MouseEvent) {
       if (!state.inZoom || state.isExitingZoom || !storage.alwaysFollowCursor)
         return;
-      messenger.propagateUp("mousemove", utils.pick(e, ["clientX", "clientY"]));
+      messenger.createMessage(
+        "onMousemove",
+        utils.pick(e, ["clientX", "clientY"])
+      );
     },
     onMousedown(e: MouseEvent) {
-      messenger.propagateUp("mousedown", { button: e.button });
+      messenger.createMessage("onMousedown", { button: e.button });
     },
     onMouseup(e: MouseEvent) {
-      messenger.propagateUp("mouseup", { button: e.button });
+      messenger.createMessage("onMouseup", { button: e.button });
     },
     onContextmenu(e: Event) {
       if (storage.activationKey == "rightClick") listeners.stopEvent(e);
@@ -63,10 +68,11 @@ function contentScript() {
     onKeyup(e: KeyboardEvent) {
       if (!helpers.isZoomOver(e)) return;
       listeners.stopEvent(e);
-      messenger.propagateUp("keyup", { key: e.key });
+      messenger.createMessage("onKeyup", { key: e.key });
     },
     stopEvent(e: Event, force?: boolean) {
-      if (Object.values(state).some((x) => x) || force) {
+      const { inZoom, isPreparingZoom, isExitingZoom } = state;
+      if (inZoom || isPreparingZoom || isExitingZoom || force) {
         e.stopPropagation();
         e.stopImmediatePropagation();
         e.preventDefault();
@@ -102,29 +108,41 @@ function contentScript() {
       paths: Array<U>
     ): Pick<T, U> {
       const ret = Object.create(null);
-      for (const k of paths) {
-        ret[k] = obj[k];
-      }
+      for (const k of paths) ret[k] = obj[k];
       return ret;
     },
   };
   const messenger = {
-    propagateUp(
-      listener: string,
-      event: Partial<MouseEvent | WheelEvent | KeyboardEvent>
-    ) {
-      (event as any).isCustomEvent = true;
-      window.parent.postMessage({ listener, event });
+    createMessage(listener: MessageData["listener"], event: any) {
+      event.isCustomEvent = true;
+      this.propagateUp({ listener, event }, true);
     },
-    propagateDown(message: any) {},
-    onMessage(message: MessageEvent) {
-      console.log(message);
-
-      if (message.data.isCustomEvent) {
-        const frameElement = e.source as any;
-
-        //this.propagateUp();
+    propagateUp(messageData: MessageData, created?: boolean) {
+      /* Shared code begin */
+      if (!created && ["onWheel", "onMousemove"].includes(messageData.listener))
+        for (const frame of document.querySelectorAll("frame, iframe"))
+          if (
+            (frame as any).contentWindow.customFrameId == messageData.frameId
+          ) {
+            const { x, y } = frame.getBoundingClientRect();
+            messageData.event.clientX += x;
+            messageData.event.clientY += y;
+            break;
+          }
+      /* Shared code end */
+      messageData.frameId = thisFrameId;
+      window.parent.postMessage(messageData);
+    },
+    propagateDown(newState: typeof state) {
+      state = newState;
+      for (const frame of document.querySelectorAll("frame, iframe")) {
+        const { contentWindow } = frame as HTMLIFrameElement;
+        if (contentWindow) contentWindow.postMessage(newState);
       }
+    },
+    onMessage(e: MessageEvent) {
+      if ("listener" in e.data) messenger.propagateUp(e.data);
+      else if ("inZoom" in e.data) messenger.propagateDown(e.data);
     },
   };
 
