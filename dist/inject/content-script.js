@@ -10,6 +10,7 @@
     let isDoubleClick = false;
     /*
     -- Iframes problem --
+    Current solution:
     */
     const sharedState = {
         inZoom: false,
@@ -28,6 +29,8 @@
             return true;
         },
     });
+    let frameX = 0;
+    let frameY = 0;
     /*
      * -- Fullscreen problem --
      * Current solution: Instead of changing fullscreenEl position in DOM, all
@@ -124,27 +127,33 @@
                 .exitZoom()
                 .then(() => window.dispatchEvent(new Event("zoom-stopped")));
         },
-        onMessage({ data: messageData }) {
-            if (!messageData.listener)
+        onMessage(message) {
+            var _a;
+            if (!((_a = message.data.event) === null || _a === void 0 ? void 0 : _a.isCustomEvent))
                 return;
             /* Shared code begin */
-            console.log(messageData.event.clientX, messageData.event.clientY);
+            const messageData = message.data;
+            const targetName = message.target[0].name;
+            console.log(messageData, message.target);
+            //console.log(messageData.event.clientX, messageData.event.clientY);
             if (["onWheel", "onMousemove"].includes(messageData.listener))
                 for (const frame of document.querySelectorAll("frame, iframe")) {
-                    {
-                        if (frame.contentWindow.customFrameId == messageData.frameId) {
-                            const { x, y } = frame.getBoundingClientRect();
-                            messageData.event.clientX += x;
-                            messageData.event.clientY += y;
-                            break;
-                        }
+                    const d = frame.contentWindow;
+                    console.log(d.name);
+                    if (d.name == messageData.frameId) {
+                        //const { x, y } = frame.getBoundingClientRect();
+                        //console.log(x, y, utils.getOffset(frame as HTMLElement));
+                        let [x, y] = utils.getOffset(frame);
+                        messageData.event.clientX += x;
+                        messageData.event.clientY += y;
+                        break;
                     }
                 }
             /* Shared code end */
             listeners[messageData.listener](messageData.event);
         },
         stopEvent(e, force) {
-            if ("isCustomEvent" in e)
+            if (e.isCustomEvent)
                 return;
             const { inZoom, isPreparingZoom, isExitingZoom } = state;
             if (inZoom || isPreparingZoom || isExitingZoom || force) {
@@ -219,8 +228,8 @@
             if (useClient) {
                 [x, y] = [e.clientX, e.clientY];
             }
-            else if ("isCustomEvent" in e) {
-                [x, y] = [e.clientX + scrollLeft, e.clientY + scrollTop];
+            else if (e.isCustomEvent) {
+                [x, y] = [e.clientX, e.clientY];
             }
             else {
                 [x, y] = [e.pageX, e.pageY];
@@ -389,6 +398,15 @@
             const { clientWidth, clientHeight } = html;
             const { innerWidth, innerHeight } = window;
             return { x: innerWidth - clientWidth, y: innerHeight - clientHeight };
+        },
+        getOffset(el) {
+            let [offsetLeft, offsetTop] = [0, 0];
+            while (el) {
+                offsetLeft += el.offsetLeft;
+                offsetTop += el.offsetTop;
+                el = el.offsetParent;
+            }
+            return [offsetLeft, offsetTop];
         },
         async switchToFullscreenEl(el) {
             /* https://stackoverflow.com/questions/71637367/requestfullscreen-not-working-with-modifier-keys-inside-keyup-event */

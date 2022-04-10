@@ -1,14 +1,19 @@
-if (window != window.top) contentScript();
-
-const thisFrameId = ((window as any).customFrameId = Math.random());
+if (window.self != window.top) contentScript();
 
 function contentScript() {
+  /* setInterval(() => document.body.innerHTML = "", 1000) */
+  ;
+  console.log("LOADED FRAME: " + window.name);
+
+  const thisFrameId = ((window as any).customFrameId = Math.random());
+
   let state = {
     inZoom: false,
     isPreparingZoom: false,
     isExitingZoom: false,
     isRightClickPressed: false,
   };
+  let throttle = false;
 
   /* Storage */
 
@@ -34,6 +39,8 @@ function contentScript() {
 
   const listeners = {
     onWheel(e: WheelEvent) {
+      console.log("wheeled");
+
       if (!(helpers.isZoomReady(e) || state.inZoom)) return;
       listeners.stopEvent(e, true);
       messenger.createMessage(
@@ -49,14 +56,23 @@ function contentScript() {
       );
     },
     onMousemove(e: MouseEvent) {
-      if (!state.inZoom || state.isExitingZoom || !storage.alwaysFollowCursor)
+      if (
+        !state.inZoom ||
+        state.isExitingZoom ||
+        !storage.alwaysFollowCursor ||
+        throttle
+      )
         return;
+      // throttle = true;
+      // setTimeout(() => (throttle = false), 10);
       messenger.createMessage(
         "onMousemove",
         utils.pick(e, ["clientX", "clientY"])
       );
     },
     onMousedown(e: MouseEvent) {
+      console.log("MOUSEDOWN");
+
       messenger.createMessage("onMousedown", { button: e.button });
     },
     onMouseup(e: MouseEvent) {
@@ -131,7 +147,7 @@ function contentScript() {
           }
       /* Shared code end */
       messageData.frameId = thisFrameId;
-      window.parent.postMessage(messageData);
+      window.parent.postMessage(messageData, "*");
     },
     propagateDown(newState: typeof state) {
       state = newState;
@@ -141,8 +157,8 @@ function contentScript() {
       }
     },
     onMessage(e: MessageEvent) {
-      if ("listener" in e.data) messenger.propagateUp(e.data);
-      else if ("inZoom" in e.data) messenger.propagateDown(e.data);
+      if (e.data.listener != undefined) messenger.propagateUp(e.data);
+      else if (e.data.inZoom != undefined) messenger.propagateDown(e.data);
     },
   };
 
