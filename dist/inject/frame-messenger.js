@@ -1,18 +1,17 @@
 "use strict";
+/* "run_at": "document_start" is removed because window
+listeners don't get registered on dynamically created frames. */
 if (window.self != window.top)
-    contentScript();
-function contentScript() {
+    run();
+function run() {
     /* setInterval(() => document.body.innerHTML = "", 1000) */
-    ;
-    console.log("LOADED FRAME: " + window.name);
-    const thisFrameId = (window.customFrameId = Math.random());
     let state = {
         inZoom: false,
         isPreparingZoom: false,
         isExitingZoom: false,
         isRightClickPressed: false,
     };
-    let throttle = false;
+    const framePosition = { x: -1, y: -1 };
     /* Storage */
     let storage = {
         activationKey: "rightClick",
@@ -34,31 +33,27 @@ function contentScript() {
     /* Functions */
     const listeners = {
         onWheel(e) {
-            console.log("wheeled");
             if (!(helpers.isZoomReady(e) || state.inZoom))
                 return;
             listeners.stopEvent(e, true);
-            messenger.createMessage("onWheel", utils.pick(e, [
+            const customEvent = utils.pick(e, [
                 "altKey",
                 "ctrlKey",
                 "shiftKey",
                 "deltaY",
                 "clientX",
                 "clientY",
-            ]));
+            ]);
+            messenger.createMessage("onWheel", customEvent);
         },
         onMousemove(e) {
-            if (!state.inZoom ||
-                state.isExitingZoom ||
-                !storage.alwaysFollowCursor ||
-                throttle)
+            if (!state.inZoom || state.isExitingZoom || !storage.alwaysFollowCursor)
                 return;
-            // throttle = true;
-            // setTimeout(() => (throttle = false), 10);
-            messenger.createMessage("onMousemove", utils.pick(e, ["clientX", "clientY"]));
+            // nosonar throttle = true; setTimeout(() => (throttle = false), 10);
+            const customEvent = utils.pick(e, ["clientX", "clientY"]);
+            messenger.createMessage("onMousemove", customEvent);
         },
         onMousedown(e) {
-            console.log("MOUSEDOWN");
             messenger.createMessage("onMousedown", { button: e.button });
         },
         onMouseup(e) {
@@ -99,6 +94,43 @@ function contentScript() {
             storage[key] = value;
         },
     };
+    const messenger = {
+        createMessage(listener, event) {
+            event.isFrameEvent = true;
+            this.propagateUp({ data: { listener, event } });
+        },
+        propagateUp({ data, source }) {
+            if (source && ["onWheel", "onMousemove"].includes(data.listener)) {
+                if (framePosition.x == -1)
+                    for (const frame of document.querySelectorAll("frame, iframe"))
+                        if (frame.contentWindow == source) {
+                            const style = getComputedStyle(frame);
+                            const { x, y } = frame.getBoundingClientRect();
+                            framePosition.x = x + (parseFloat(style.borderLeftWidth) || 0);
+                            framePosition.y = y + (parseFloat(style.borderTopWidth) || 0);
+                            break;
+                        }
+                data.event.clientX += framePosition.x;
+                data.event.clientY += framePosition.y;
+            }
+            window.parent.postMessage(data, "*");
+        },
+        propagateDown(newState) {
+            state = newState;
+            framePosition.x = -1;
+            for (const frame of document.querySelectorAll("frame, iframe")) {
+                const { contentWindow } = frame;
+                if (contentWindow)
+                    contentWindow.postMessage(newState, "*");
+            }
+        },
+        onMessage(e) {
+            if (e.data.listener != undefined)
+                messenger.propagateUp(e);
+            else if (e.data.inZoom != undefined)
+                messenger.propagateDown(e.data);
+        },
+    };
     const utils = {
         pick(obj, paths) {
             const ret = Object.create(null);
@@ -107,40 +139,7 @@ function contentScript() {
             return ret;
         },
     };
-    const messenger = {
-        createMessage(listener, event) {
-            event.isCustomEvent = true;
-            this.propagateUp({ listener, event }, true);
-        },
-        propagateUp(messageData, created) {
-            /* Shared code begin */
-            if (!created && ["onWheel", "onMousemove"].includes(messageData.listener))
-                for (const frame of document.querySelectorAll("frame, iframe"))
-                    if (frame.contentWindow.customFrameId == messageData.frameId) {
-                        const { x, y } = frame.getBoundingClientRect();
-                        messageData.event.clientX += x;
-                        messageData.event.clientY += y;
-                        break;
-                    }
-            /* Shared code end */
-            messageData.frameId = thisFrameId;
-            window.parent.postMessage(messageData, "*");
-        },
-        propagateDown(newState) {
-            state = newState;
-            for (const frame of document.querySelectorAll("frame, iframe")) {
-                const { contentWindow } = frame;
-                if (contentWindow)
-                    contentWindow.postMessage(newState);
-            }
-        },
-        onMessage(e) {
-            if (e.data.listener != undefined)
-                messenger.propagateUp(e.data);
-            else if (e.data.inZoom != undefined)
-                messenger.propagateDown(e.data);
-        },
-    };
+    /* Listeners Registration */
     const options = { passive: false, capture: true };
     window.addEventListener("wheel", listeners.onWheel, options);
     window.addEventListener("mousemove", listeners.onMousemove);

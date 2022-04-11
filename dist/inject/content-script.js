@@ -1,6 +1,5 @@
 "use strict";
 /* Created with Typescript & SCSS by Kristijan Rosandić */
-/* For testing: http://motherfuckingwebsite.com/ */
 (() => {
     const html = document.documentElement;
     let docStyle;
@@ -18,25 +17,13 @@
         isExitingZoom: false,
         isRightClickPressed: false,
     };
-    const state = new Proxy(sharedState, {
-        set: function (target, key, value) {
-            target[key] = value;
-            for (const frame of document.querySelectorAll("frame, iframe")) {
-                const { contentWindow } = frame;
-                if (contentWindow)
-                    contentWindow.postMessage(target);
-            }
-            return true;
-        },
-    });
-    let frameX = 0;
-    let frameY = 0;
+    const framePosition = { x: -1, y: -1 };
     /*
      * -- Fullscreen problem --
      * Current solution: Instead of changing fullscreenEl position in DOM, all
      * its ancestors need to have the highest specificity style which defines values:
      * filter, transform, backdrop-filter, perspective, contain,
-     * transform-style, content-visibility, and will-change as none.
+     * transform-style, content-visibility, and will-change as none or initial.
      */
     let inFullscreenZoom = false;
     let fullscreenEl;
@@ -127,33 +114,38 @@
                 .exitZoom()
                 .then(() => window.dispatchEvent(new Event("zoom-stopped")));
         },
-        onMessage(message) {
+        onMessage({ data, source }) {
             var _a;
-            if (!((_a = message.data.event) === null || _a === void 0 ? void 0 : _a.isCustomEvent))
+            if (!((_a = data.event) === null || _a === void 0 ? void 0 : _a.isFrameEvent) || !source)
                 return;
-            /* Shared code begin */
-            const messageData = message.data;
-            const targetName = message.target[0].name;
-            console.log(messageData, message.target);
-            //console.log(messageData.event.clientX, messageData.event.clientY);
-            if (["onWheel", "onMousemove"].includes(messageData.listener))
-                for (const frame of document.querySelectorAll("frame, iframe")) {
-                    const d = frame.contentWindow;
-                    console.log(d.name);
-                    if (d.name == messageData.frameId) {
-                        //const { x, y } = frame.getBoundingClientRect();
-                        //console.log(x, y, utils.getOffset(frame as HTMLElement));
-                        let [x, y] = utils.getOffset(frame);
-                        messageData.event.clientX += x;
-                        messageData.event.clientY += y;
-                        break;
-                    }
-                }
-            /* Shared code end */
-            listeners[messageData.listener](messageData.event);
+            if (["onWheel", "onMousemove"].includes(data.listener)) {
+                if (framePosition.x == -1)
+                    for (const frame of document.querySelectorAll("frame, iframe"))
+                        if (frame.contentWindow == source) {
+                            const style = getComputedStyle(frame);
+                            const { x, y } = utils.getOffset(frame);
+                            framePosition.x = x + (parseFloat(style.borderLeftWidth) || 0);
+                            framePosition.y = y + (parseFloat(style.borderTopWidth) || 0);
+                            break;
+                        }
+                // Client coordinates become page coordinates after offsets are computed
+                data.event.clientX += framePosition.x;
+                data.event.clientY += framePosition.y;
+            }
+            listeners[data.listener](data.event);
+        },
+        onStateChange(target, key, value) {
+            target[key] = value;
+            framePosition.x = -1;
+            for (const frame of document.querySelectorAll("frame, iframe")) {
+                const { contentWindow } = frame;
+                if (contentWindow)
+                    contentWindow.postMessage(target, "*");
+            }
+            return true;
         },
         stopEvent(e, force) {
-            if (e.isCustomEvent)
+            if (e.isFrameEvent)
                 return;
             const { inZoom, isPreparingZoom, isExitingZoom } = state;
             if (inZoom || isPreparingZoom || isExitingZoom || force) {
@@ -222,18 +214,9 @@
             helpers.setStyleProperty("transform", `scale(${1 + zoomLevel})`);
         },
         transformOrigin(e, zoomType, started) {
-            const useClient = storage.useScreenshot || inFullscreenZoom;
             const { scrollLeft, scrollTop, clientWidth, clientHeight } = targetEl;
-            let x, y;
-            if (useClient) {
-                [x, y] = [e.clientX, e.clientY];
-            }
-            else if (e.isCustomEvent) {
-                [x, y] = [e.clientX, e.clientY];
-            }
-            else {
-                [x, y] = [e.pageX, e.pageY];
-            }
+            const useClient = storage.useScreenshot || inFullscreenZoom || e.isFrameEvent;
+            let [x, y] = useClient ? [e.clientX, e.clientY] : [e.pageX, e.pageY];
             let transition = `transform ${storage.transition}ms`;
             if (!storage.alwaysFollowCursor) {
                 if (zoomLevel < 0) {
@@ -400,14 +383,15 @@
             return { x: innerWidth - clientWidth, y: innerHeight - clientHeight };
         },
         getOffset(el) {
-            let [offsetLeft, offsetTop] = [0, 0];
+            let [x, y] = [0, 0];
             while (el) {
-                offsetLeft += el.offsetLeft;
-                offsetTop += el.offsetTop;
+                x += el.offsetLeft;
+                y += el.offsetTop;
                 el = el.offsetParent;
             }
-            return [offsetLeft, offsetTop];
+            return { x, y };
         },
+        // prettier-ignore
         async switchToFullscreenEl(el) {
             /* https://stackoverflow.com/questions/71637367/requestfullscreen-not-working-with-modifier-keys-inside-keyup-event */
             try {
@@ -420,6 +404,8 @@
             catch (_b) { }
         },
     };
+    /* Listeners Registration */
+    const state = new Proxy(sharedState, { set: listeners.onStateChange });
     const options = { passive: false, capture: true };
     window.addEventListener("wheel", listeners.onWheel, options);
     window.addEventListener("mousemove", listeners.onMousemove);

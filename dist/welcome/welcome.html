@@ -26,12 +26,15 @@
         technology:
         <ul>
           <li>
-            <strong>&lt;iframe> elements (nested browsing contexts).</strong>
-            The extension code (content-script) is injected into all frames.
-            When you zoom inside a frame, its parent frame cannot know your
-            cursor position. However, if you zoom inside the parent frame, the
-            extension disables pointer events from all child frames, so that the
-            parent frame can always know your cursor position.
+            <strong>Frame elements (nested browsing contexts).</strong>
+            The extension works even when frames are nested and dynamically
+            created. However, some frames with strict sandbox attribute don't
+            allow content script injection and therefore it is impossible to
+            register any events while cursor is hovering them. For example, this
+            can happen with Google Ads. To zoom towards such element, the only
+            solution is to disable interactivity (option from the popup), zoom
+            anywhere around it to trigger the zoom, and only then zoom inside
+            that element.
           </li>
           <li>
             <strong>Toggling JavaScript.</strong>
@@ -47,9 +50,8 @@
             JavaScript prevents potential content adjusting and could improve
             performance significantly.
           </li>
-          <li></li>
         </ul>
-        If you found a solution to any of these issues, contact me:
+        If you found a solution to any of these issues, please contact me:
         <a href="mailto:kristijan.ros@gmail.com">kristijan.ros@gmail.com</a>
         <button>Close</button>
       </div>

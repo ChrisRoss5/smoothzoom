@@ -1,5 +1,4 @@
 /* Created with Typescript & SCSS by Kristijan Rosandić */
-/* For testing: http://motherfuckingwebsite.com/ */
 
 interface ElementAndStyle {
   el: HTMLElement;
@@ -23,24 +22,13 @@ interface ElementAndStyle {
     isExitingZoom: false,
     isRightClickPressed: false,
   };
-  const state = new Proxy(sharedState, {
-    set: function (target, key, value) {
-      target[key as keyof typeof target] = value;
-      for (const frame of document.querySelectorAll("frame, iframe")) {
-        const { contentWindow } = frame as HTMLIFrameElement;
-        if (contentWindow) contentWindow.postMessage(target);
-      }
-      return true;
-    },
-  });
-  let frameX = 0;
-  let frameY = 0;
+  const framePosition = { x: -1, y: -1 };
   /*
    * -- Fullscreen problem --
    * Current solution: Instead of changing fullscreenEl position in DOM, all
    * its ancestors need to have the highest specificity style which defines values:
    * filter, transform, backdrop-filter, perspective, contain,
-   * transform-style, content-visibility, and will-change as none.
+   * transform-style, content-visibility, and will-change as none or initial.
    */
   let inFullscreenZoom = false;
   let fullscreenEl: HTMLElement;
@@ -122,33 +110,35 @@ interface ElementAndStyle {
         .exitZoom()
         .then(() => window.dispatchEvent(new Event("zoom-stopped")));
     },
-    onMessage(message: MessageEvent) {
-      if (!message.data.event?.isCustomEvent) return;
-      /* Shared code begin */
-      const messageData = message.data as MessageData;
-      const targetName = (message as any).target[0].name as string;
-
-      console.log( messageData, (message as any).target )
-      //console.log(messageData.event.clientX, messageData.event.clientY);
-      if (["onWheel", "onMousemove"].includes(messageData.listener))
-        for (const frame of document.querySelectorAll("frame, iframe")) {
-          const d = (frame as any).contentWindow;
-          console.log(d.name);
-
-          if (d.name == messageData.frameId) {
-            //const { x, y } = frame.getBoundingClientRect();
-            //console.log(x, y, utils.getOffset(frame as HTMLElement));
-            let [x, y] = utils.getOffset(frame as HTMLElement);
-            messageData.event.clientX += x;
-            messageData.event.clientY += y;
-            break;
-          }
-        }
-      /* Shared code end */
-      listeners[messageData.listener](messageData.event);
+    onMessage({ data, source }: { data: MessageData; source?: WindowProxy }) {
+      if (!data.event?.isFrameEvent || !source) return;
+      if (["onWheel", "onMousemove"].includes(data.listener)) {
+        if (framePosition.x == -1)
+          for (const frame of document.querySelectorAll("frame, iframe"))
+            if ((frame as any).contentWindow == source) {
+              const style = getComputedStyle(frame);
+              const { x, y } = utils.getOffset(frame as HTMLElement);
+              framePosition.x = x + (parseFloat(style.borderLeftWidth) || 0);
+              framePosition.y = y + (parseFloat(style.borderTopWidth) || 0);
+              break;
+            }
+        // Client coordinates become page coordinates after offsets are computed
+        data.event.clientX += framePosition.x;
+        data.event.clientY += framePosition.y;
+      }
+      listeners[data.listener](data.event);
+    },
+    onStateChange(target: typeof sharedState, key: string, value: boolean) {
+      target[key as keyof typeof target] = value;
+      framePosition.x = -1;
+      for (const frame of document.querySelectorAll("frame, iframe")) {
+        const { contentWindow } = frame as HTMLIFrameElement;
+        if (contentWindow) contentWindow.postMessage(target, "*");
+      }
+      return true;
     },
     stopEvent(e: Event, force?: boolean) {
-      if ((e as any).isCustomEvent) return;
+      if ((e as any).isFrameEvent) return;
       const { inZoom, isPreparingZoom, isExitingZoom } = state;
       if (inZoom || isPreparingZoom || isExitingZoom || force) {
         e.stopPropagation();
@@ -211,18 +201,10 @@ interface ElementAndStyle {
       helpers.setStyleProperty("transform", `scale(${1 + zoomLevel})`);
     },
     transformOrigin(e: MouseEvent, zoomType: -1 | 1 | 0, started?: boolean) {
-      const useClient = storage.useScreenshot || inFullscreenZoom;
       const { scrollLeft, scrollTop, clientWidth, clientHeight } = targetEl;
-
-      let x, y;
-      if (useClient) {
-        [x, y] = [e.clientX, e.clientY];
-      } else if ((e as any).isCustomEvent) {
-        [x, y] = [e.clientX, e.clientY];
-      } else {
-        [x, y] = [e.pageX, e.pageY];
-      }
-
+      const useClient =
+        storage.useScreenshot || inFullscreenZoom || (e as any).isFrameEvent;
+      let [x, y] = useClient ? [e.clientX, e.clientY] : [e.pageX, e.pageY];
       let transition = `transform ${storage.transition}ms`;
       if (!storage.alwaysFollowCursor) {
         if (zoomLevel < 0) {
@@ -384,25 +366,25 @@ interface ElementAndStyle {
       return { x: innerWidth - clientWidth, y: innerHeight - clientHeight };
     },
     getOffset(el: HTMLElement) {
-      let [offsetLeft, offsetTop] = [0, 0];
+      let [x, y] = [0, 0];
       while (el) {
-        offsetLeft += el.offsetLeft;
-        offsetTop += el.offsetTop;
+        x += el.offsetLeft;
+        y += el.offsetTop;
         (el as any) = el.offsetParent;
       }
-      return [offsetLeft, offsetTop];
+      return { x, y };
     },
+    // prettier-ignore
     async switchToFullscreenEl(el: HTMLElement) {
       /* https://stackoverflow.com/questions/71637367/requestfullscreen-not-working-with-modifier-keys-inside-keyup-event */
-      try {
-        await document.exitFullscreen();
-      } catch {}
-      try {
-        el.requestFullscreen();
-      } catch {}
+      try { await document.exitFullscreen(); } catch {}
+      try { el.requestFullscreen(); } catch {}
     },
   };
 
+  /* Listeners Registration */
+
+  const state = new Proxy(sharedState, { set: listeners.onStateChange });
   const options = { passive: false, capture: true };
   window.addEventListener("wheel", listeners.onWheel, options);
   window.addEventListener("mousemove", listeners.onMousemove);
@@ -412,5 +394,5 @@ interface ElementAndStyle {
   window.addEventListener("keyup", listeners.onKeyup, true);
   window.addEventListener("scroll", listeners.onScroll);
   window.addEventListener("stop-zoom", listeners.onStopZoom);
-  window.addEventListener("message", listeners.onMessage);
+  window.addEventListener("message", (listeners as any).onMessage);
 })();

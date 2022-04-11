@@ -15,7 +15,7 @@
   }
   &[in-zoom] {
     /* iframe {
-      pointer-events: none !important;
+      pointer-events: none !important;  // Previous solution
     } */
     &,
     body {
