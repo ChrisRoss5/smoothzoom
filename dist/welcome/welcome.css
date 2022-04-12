@@ -1,3 +1,4 @@
+@charset "UTF-8";
 /* html {
   width: 100vw;
   height: 100vh;
@@ -22,19 +23,21 @@ body {
 /* specific */
 #box {
   position: relative;
-  padding: 0 0 50px 50px;
+  transition: padding 0.5s;
 }
 #box::before, #box::after {
   content: "";
   position: absolute;
   left: -20px;
+  z-index: -1;
 }
 #box::before {
   top: 0;
-  bottom: 0;
+  bottom: -20px;
   width: 20px;
   clip-path: polygon(100% 0, 0% 100%, 100% calc(100% - 20px));
   background: #dbe0eb;
+  transition: bottom 0.5s;
 }
 #box::after {
   top: 100%;
@@ -43,14 +46,41 @@ body {
   background: #8b8e94;
   clip-path: polygon(20px 0, 0% 100%, 100% 0);
 }
-
-#welcome {
+#box.opened {
+  padding: 0 0 50px 50px;
+}
+#box.opened::before {
+  bottom: 0;
+}
+#box.opened #welcome-container {
+  opacity: 1;
   width: 450px;
   margin-right: 100px;
 }
+
+#more-info {
+  position: absolute;
+  bottom: 57px;
+  left: -122px;
+  letter-spacing: 10px;
+  transform: rotate(272deg);
+  transition: opacity 1s;
+  cursor: pointer;
+}
+
+#welcome-container {
+  opacity: 0;
+  width: 0;
+  margin-right: 0;
+  transition: opacity 0.5s 0.7s, width 0.5s 0.4s, margin-right 0.5s 0.4s;
+}
+
+#welcome {
+  width: 450px;
+}
 #welcome img {
   display: block;
-  margin: 10px auto 5px;
+  margin: 15px auto;
   /* 20px auto 10px; */
   width: 50px;
 }
@@ -97,15 +127,44 @@ body {
   color: #21a0ff;
 }
 
-#installed, #updated {
-  width: 400px;
+#installed,
+#updated {
+  width: 550px;
   display: none;
 }
-#installed strong, #updated strong {
+#installed strong,
+#updated strong {
   display: block;
   font-size: 1.5rem;
   color: lightgreen;
   margin-bottom: 20px;
+}
+#installed blockquote,
+#updated blockquote {
+  position: relative;
+  margin: 0;
+}
+#installed blockquote p,
+#updated blockquote p {
+  padding: 15px;
+  background: #eee;
+  border-radius: 5px;
+}
+#installed blockquote p::before,
+#updated blockquote p::before {
+  content: "“";
+}
+#installed blockquote p::after,
+#updated blockquote p::after {
+  content: "”";
+}
+#installed blockquote::after,
+#updated blockquote::after {
+  content: "— Chrome Web Store Description";
+  position: absolute;
+  right: 0;
+  bottom: -20px;
+  font-size: 12px;
 }
 
 #author {
@@ -126,6 +185,13 @@ body {
 #author details:last-of-type {
   margin-bottom: 20px;
 }
+#author details[open] {
+  padding: 0.5em;
+}
+#author details[open] summary {
+  border-bottom: 1px solid #aaa;
+  margin-bottom: 0.5em;
+}
 #author summary {
   font-weight: bold;
   margin: -0.5em -0.5em 0;
@@ -134,13 +200,6 @@ body {
 }
 #author summary strong {
   float: right;
-}
-#author details[open] {
-  padding: 0.5em;
-}
-#author details[open] summary {
-  border-bottom: 1px solid #aaa;
-  margin-bottom: 0.5em;
 }
 
 #hint {

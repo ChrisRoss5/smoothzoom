@@ -5,8 +5,8 @@ body {
   margin: 0;
   padding: 0;
   color: #595959;
-  font-size: 20px;
-  font-family: Ubuntu, Arial, Helvetica, sans-serif;
+  font-size: 18px;
+  font-family: Segoe UI, Arial, Helvetica, sans-serif;
   overflow: hidden;
 }
 
@@ -97,6 +97,7 @@ label input:not([type=range])::after {
   background-size: cover;
   background-repeat: no-repeat;
   overflow: hidden;
+  font-family: Ubuntu, Arial, Helvetica, sans-serif;
 }
 
 #title {

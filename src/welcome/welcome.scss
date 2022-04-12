@@ -26,19 +26,21 @@ body {
 #box {
   position: relative;
   @extend .flex-center;
-  padding: 0 0 50px 50px;
+  transition: padding 0.5s;
   &::before,
   &::after {
     content: "";
     position: absolute;
     left: -20px;
+    z-index: -1;
   }
   &::before {
     top: 0;
-    bottom: 0;
+    bottom: -20px;
     width: 20px;
     clip-path: polygon(100% 0, 0% 100%, 100% calc(100% - 20px));
     background: #dbe0eb;
+    transition: bottom 0.5s;
   }
   &::after {
     top: 100%;
@@ -47,13 +49,38 @@ body {
     background: #8b8e94;
     clip-path: polygon(20px 0, 0% 100%, 100% 0);
   }
+  &.opened {
+    padding: 0 0 50px 50px;
+    &::before {
+      bottom: 0;
+    }
+    #welcome-container {
+      opacity: 1;
+      width: 450px;
+      margin-right: 100px;
+    }
+  }
+}
+#more-info {
+  position: absolute;
+  bottom: 57px;
+  left: -122px;
+  letter-spacing: 10px;
+  transform: rotate(272deg);
+  transition: opacity 1s;
+  cursor: pointer;
+}
+#welcome-container {
+  opacity: 0;
+  width: 0;
+  margin-right: 0;
+  transition: opacity 0.5s 0.7s, width 0.5s 0.4s, margin-right 0.5s 0.4s;
 }
 #welcome {
   width: 450px;
-  margin-right: 100px;
   img {
     display: block;
-    margin: 10px auto 5px; /* 20px auto 10px; */
+    margin: 15px auto; /* 20px auto 10px; */
     width: 50px;
   }
   span {
@@ -97,14 +124,38 @@ body {
     }
   }
 }
-#installed, #updated {
-  width: 400px;
+#installed,
+#updated {
+  width: 550px;
   display: none;
   strong {
     display: block;
     font-size: 1.5rem;
     color: lightgreen;
     margin-bottom: 20px;
+  }
+  blockquote {
+    position: relative;
+    margin: 0;
+    p {
+      padding: 15px;
+      background: #eee;
+      border-radius: 5px;
+
+      &::before {
+        content: "\201C";
+      }
+      &::after {
+        content: "\201D";
+      }
+    }
+    &::after {
+      content: "— Chrome Web Store Description";
+      position: absolute;
+      right: 0;
+      bottom: -20px;
+      font-size: 12px;
+    }
   }
 }
 #author {
@@ -123,6 +174,13 @@ body {
     &:last-of-type {
       margin-bottom: 20px;
     }
+    &[open] {
+      padding: 0.5em;
+      summary {
+        border-bottom: 1px solid #aaa;
+        margin-bottom: 0.5em;
+      }
+    }
   }
   summary {
     font-weight: bold;
@@ -132,13 +190,6 @@ body {
     strong {
       float: right;
     }
-  }
-  details[open] {
-    padding: 0.5em;
-  }
-  details[open] summary {
-    border-bottom: 1px solid #aaa;
-    margin-bottom: 0.5em;
   }
 }
 #hint {

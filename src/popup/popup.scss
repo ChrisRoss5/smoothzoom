@@ -9,8 +9,8 @@ body {
   margin: 0;
   padding: 0;
   color: $main-text;
-  font-size: 20px;
-  font-family: Ubuntu, Arial, Helvetica, sans-serif;
+  font-size: 18px;
+  font-family: Segoe UI, Arial, Helvetica, sans-serif;
   overflow: hidden;
 }
 a {
@@ -96,6 +96,7 @@ label {
   background-size: cover;
   background-repeat: no-repeat;
   overflow: hidden;
+  font-family: Ubuntu, Arial, Helvetica, sans-serif;
 }
 #title {
   margin: 5px auto 0;

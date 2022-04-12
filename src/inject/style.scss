@@ -17,6 +17,12 @@
     /* iframe {
       pointer-events: none !important;  // Previous solution
     } */
+
+    /*
+      *:not([some-ancestor]) { display: none ;}  // Hide everything else when in fullscreen zoom -- todo feature
+      [some-ancestor] * {display: revert; }
+    */
+
     &,
     body {
       scrollbar-width: none !important; /* Firefox */

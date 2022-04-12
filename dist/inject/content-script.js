@@ -19,16 +19,7 @@
     let inFullscreenZoom = false;
     let fullscreenEl;
     let fullscreenElAncestors = [];
-    /* Elements with position "fixed" problem --
-     * > Previous solution (100% working but slow):
-     * [...doc.getElementsByTagName("*")].filter((el) => getComputedStyle(el).position == "fixed");
-     * > Current solution:
-     * Reading CSS stylesheets from content script.
-     * > Problem:
-     * If CORS is present on the stylesheet, there is no access to it.
-     * > Possible solution:
-     * Debugger
-     */
+    /* Elements with fixed position problem */
     let fixedElements = [];
     /* Storage */
     let storage = {
@@ -230,6 +221,8 @@
             helpers.setStyleProperty("transform-origin", `${x}px ${y}px`);
         },
         async exitZoom() {
+            if (state.isExitingZoom)
+                return;
             if (!isDoubleClick && (!storage.holdToZoom || inFullscreenZoom)) {
                 isDoubleClick = true;
                 return;
@@ -347,6 +340,7 @@
             this.setStyleProperty("transform-style", "initial", el);
             this.setStyleProperty("content-visibility", "initial", el);
             this.setStyleProperty("will-change", "initial", el);
+            this.setStyleProperty("z-index", "9999999999999999999", el);
         },
         resetElementsStyle(elements) {
             elements.forEach(({ el, style }) => el.setAttribute("style", style));
@@ -421,12 +415,12 @@
     const state = new Proxy(sharedState, { set: listeners.onStateChange });
     const options = { passive: false, capture: true };
     window.addEventListener("wheel", listeners.onWheel, options);
-    window.addEventListener("mousemove", listeners.onMousemove);
-    window.addEventListener("mousedown", listeners.onMousedown);
-    window.addEventListener("mouseup", listeners.onMouseup);
+    window.addEventListener("mousemove", listeners.onMousemove, true);
+    window.addEventListener("mousedown", listeners.onMousedown, true);
+    window.addEventListener("mouseup", listeners.onMouseup, true);
     window.addEventListener("contextmenu", listeners.onContextmenu, true);
     window.addEventListener("keyup", listeners.onKeyup, true);
-    window.addEventListener("scroll", listeners.onScroll);
+    window.addEventListener("scroll", listeners.onScroll, true);
     window.addEventListener("stop-zoom", listeners.onStopZoom);
     window.addEventListener("message", listeners.onMessage);
 })();

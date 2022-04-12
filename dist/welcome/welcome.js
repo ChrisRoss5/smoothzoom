@@ -1,15 +1,21 @@
 "use strict";
+const box = document.querySelector("#box");
+const moreInfo = box.querySelector("#more-info");
 const overlayEl = document.querySelector("#overlay");
 const secretEl = document.querySelector("#secret");
 const authorEl = document.querySelector("#author");
 const closeAuthorEl = authorEl.querySelector("button");
+closeAuthorEl.onclick = hideOverlay;
+moreInfo.onclick = showMoreInfo;
+secretEl.onclick = () => window.dispatchEvent(new Event("stop-zoom"));
+window.addEventListener("zoom-stopped", showAuthor);
 if (/#installed|#updated/.test(location.hash))
     showWelcome();
-secretEl.onclick = stopZoom;
 function showWelcome() {
     const installedEl = overlayEl.querySelector(location.hash);
     const closeWelcomeEl = installedEl.querySelector("button");
     location.hash = "";
+    moreInfo.style.display = "none";
     authorEl.style.display = "none";
     installedEl.style.display = "block";
     showOverlay().then(() => {
@@ -18,19 +24,17 @@ function showWelcome() {
         closeWelcomeEl.onclick = () => {
             installedEl.remove();
             hideOverlay();
-            setTimeout(() => (authorEl.style.display = "block"), 500);
+            setTimeout(() => {
+                authorEl.style.display = "block";
+                box.classList.add("opened");
+            }, 500);
         };
     });
-}
-function stopZoom() {
-    window.addEventListener("zoom-stopped", showAuthor, { once: true });
-    window.dispatchEvent(new Event("stop-zoom"));
 }
 function showAuthor() {
     showOverlay().then(() => {
         authorEl.style.opacity = "1";
         authorEl.style.transform = "none";
-        closeAuthorEl.onclick = hideOverlay;
     });
 }
 function showOverlay() {
@@ -43,4 +47,8 @@ function showOverlay() {
 function hideOverlay() {
     setTimeout(() => authorEl.removeAttribute("style"), 500);
     overlayEl.removeAttribute("style");
+}
+function showMoreInfo() {
+    box.classList.add("opened");
+    moreInfo.style.opacity = "0";
 }
