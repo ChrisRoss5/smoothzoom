@@ -3,14 +3,14 @@ const overlayEl = document.querySelector("#overlay");
 const secretEl = document.querySelector("#secret");
 const authorEl = document.querySelector("#author");
 const closeAuthorEl = authorEl.querySelector("button");
-if (location.hash == "#installed")
+if (/#installed|#updated/.test(location.hash))
     showWelcome();
 secretEl.onclick = stopZoom;
-showAuthor();
 function showWelcome() {
-    //todo location.hash = "";
-    const installedEl = overlayEl.querySelector("#installed");
+    const installedEl = overlayEl.querySelector(location.hash);
     const closeWelcomeEl = installedEl.querySelector("button");
+    location.hash = "";
+    authorEl.style.display = "none";
     installedEl.style.display = "block";
     showOverlay().then(() => {
         installedEl.style.opacity = "1";
@@ -18,6 +18,7 @@ function showWelcome() {
         closeWelcomeEl.onclick = () => {
             installedEl.remove();
             hideOverlay();
+            setTimeout(() => (authorEl.style.display = "block"), 500);
         };
     });
 }
@@ -34,13 +35,12 @@ function showAuthor() {
 }
 function showOverlay() {
     return new Promise((resolve) => {
-        overlayEl.style.display = "block";
-        overlayEl.offsetWidth; // NOSONAR
         overlayEl.style.opacity = "1";
+        overlayEl.style.pointerEvents = "auto";
         setTimeout(resolve, 250);
     });
 }
 function hideOverlay() {
-    overlayEl.style.opacity = "0";
-    overlayEl.style.display = "none";
+    setTimeout(() => authorEl.removeAttribute("style"), 500);
+    overlayEl.removeAttribute("style");
 }

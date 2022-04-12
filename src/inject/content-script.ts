@@ -12,10 +12,7 @@ interface ElementAndStyle {
   let zoomLevel = 0;
   let lastZoomOrigin = { x: 0, y: 0 };
   let isDoubleClick = false;
-  /*
-  -- Iframes problem --
-  Current solution:
-  */
+  /* Frames problem */
   const sharedState = {
     inZoom: false,
     isPreparingZoom: false,
@@ -23,24 +20,19 @@ interface ElementAndStyle {
     isRightClickPressed: false,
   };
   const framePosition = { x: -1, y: -1 };
-  /*
-   * -- Fullscreen problem --
-   * Current solution: Instead of changing fullscreenEl position in DOM, all
-   * its ancestors need to have the highest specificity style which defines values:
-   * filter, transform, backdrop-filter, perspective, contain,
-   * transform-style, content-visibility, and will-change as none or initial.
-   */
+  /* Fullscreen problem */
   let inFullscreenZoom = false;
   let fullscreenEl: HTMLElement;
   let fullscreenElAncestors: ElementAndStyle[] = [];
-  /*
-   * -- Elements with position "fixed" problem --
-   * Previous solution (100% working but slow):
+  /* Elements with position "fixed" problem --
+   * > Previous solution (100% working but slow):
    * [...doc.getElementsByTagName("*")].filter((el) => getComputedStyle(el).position == "fixed");
-   * Current solution:
-   * Reading CSS stylesheets, but due to CORS some might fail.
-   * Possible solution (CHROME DEBUGGER):
-   * https://stackoverflow.com/questions/63790794/get-css-rules-chrome-extension
+   * > Current solution:
+   * Reading CSS stylesheets from content script.
+   * > Problem:
+   * If CORS is present on the stylesheet, there is no access to it.
+   * > Possible solution:
+   * Debugger
    */
   let fixedElements: ElementAndStyle[] = [];
 
@@ -112,7 +104,7 @@ interface ElementAndStyle {
     },
     onMessage({ data, source }: { data: MessageData; source?: WindowProxy }) {
       if (!data.event?.isFrameEvent || !source) return;
-      if (["onWheel", "onMousemove"].includes(data.listener)) {
+      if (/onWheel|onMousemove/.test(data.listener)) {
         if (framePosition.x == -1)
           for (const frame of document.querySelectorAll("frame, iframe"))
             if ((frame as any).contentWindow == source) {
@@ -152,16 +144,15 @@ interface ElementAndStyle {
       state.isPreparingZoom = true;
       if (storage.disableJavascript) await control.toggleJavascript(false);
       if (storage.useScreenshot) await control.createScreenshot();
-      fullscreenEl = document.fullscreenElement as HTMLElement;
-      if (fullscreenEl && fullscreenEl != html)
-        await control.setFullscreenZoom();
-      control.enableZoom();
-      state.isPreparingZoom = false;
-    },
-    enableZoom() {
-      state.inZoom = true;
+      fullscreenEl = (document.fullscreenElement || html) as HTMLElement;
+      if (fullscreenEl != html) await control.setFullscreenZoom();
       if (storage.disableInteractivity) html.setAttribute("no-events", "");
-      if (storage.useScreenshot || inFullscreenZoom) return;
+      if (!(storage.useScreenshot || inFullscreenZoom))
+        await control.enableZoom();
+      state.isPreparingZoom = false;
+      state.inZoom = true;
+    },
+    async enableZoom() {
       docStyle = html.getAttribute("style") || "";
       const { x, y } = utils.getHTMLScrollbarsWidth();
       helpers.setStyleProperty("width", "calc(100vw - " + x + "px)");
@@ -169,7 +160,7 @@ interface ElementAndStyle {
       html.setAttribute("in-zoom", "");
       helpers.setStyleProperty("--zoom-top", html.scrollTop + "px");
       helpers.setStyleProperty("--zoom-left", html.scrollLeft + "px");
-      fixedElements = utils.getFixedElements().map((el) => {
+      fixedElements = (await helpers.getFixedElements()).map((el) => {
         const elInfo = { el, style: el.getAttribute("style") || "" };
         const rect = el.getBoundingClientRect();
         const newTop = rect.top + html.scrollTop + "px";
@@ -298,6 +289,21 @@ interface ElementAndStyle {
         (e.key == "Shift" && storage.activationKey == "shiftKey")
       );
     },
+    async getFixedElements(useDebugger?: boolean) {
+      let selectors = "[style*='position:fixed'],[style*='position: fixed']";
+      const moreSelectors = useDebugger
+        ? (
+            await new Promise<string[]>((resolve) => {
+              const request = { message: "GET_FIXED_ELEMENT_SELECTORS" };
+              chrome.runtime.sendMessage(request, resolve);
+            })
+          ).filter(utils.isSelectorValid)
+        : utils.getFixedElementSelectors();
+      if (moreSelectors.length) selectors += "," + moreSelectors.join(",");
+      return [...html.querySelectorAll(selectors)].filter(
+        (el) => getComputedStyle(el).position == "fixed"
+      ) as HTMLElement[];
+    },
     getStrength(percentage: number) {
       if (percentage < 0.5) return 0.25 + 1.5 * percentage;
       return 1 + 6 * (percentage - 0.5);
@@ -344,22 +350,6 @@ interface ElementAndStyle {
     getAncestors: function* getAncestors(el: HTMLElement) {
       while ((el = el.parentElement!)) yield el;
     },
-    getFixedElements() {
-      let selectors = "[style*='position:fixed'],[style*='position: fixed']";
-      for (const stylesheet of document.styleSheets) {
-        if (stylesheet.disabled) continue;
-        try {
-          for (const rule of stylesheet.cssRules) {
-            if (!(rule instanceof CSSStyleRule)) continue;
-            if (rule.style.position == "fixed")
-              selectors += "," + rule.selectorText;
-          }
-        } catch {} // CORS
-      }
-      return [...html.querySelectorAll(selectors)].filter(
-        (el) => getComputedStyle(el).position == "fixed"
-      ) as HTMLElement[];
-    },
     getHTMLScrollbarsWidth() {
       const { clientWidth, clientHeight } = html;
       const { innerWidth, innerHeight } = window;
@@ -373,6 +363,26 @@ interface ElementAndStyle {
         (el as any) = el.offsetParent;
       }
       return { x, y };
+    },
+    getFixedElementSelectors() {
+      let selectors: string[] = [];
+      for (const stylesheet of document.styleSheets) {
+        if (stylesheet.disabled) continue;
+        try {
+          for (const rule of stylesheet.cssRules) {
+            if (!(rule instanceof CSSStyleRule)) continue;
+            if (rule.style.position == "fixed")
+              selectors.push(rule.selectorText);
+          }
+        } catch {} // CORS
+      }
+      return selectors;
+    },
+    // prettier-ignore
+    isSelectorValid(selector: string) {
+      try { document.createDocumentFragment().querySelector(selector); }
+      catch { return false; }
+      return true;
     },
     // prettier-ignore
     async switchToFullscreenEl(el: HTMLElement) {

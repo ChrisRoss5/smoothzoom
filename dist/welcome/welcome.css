@@ -10,7 +10,7 @@
 body {
   overflow: hidden;
   min-height: 100vh;
-  background-color: #202020;
+  /* background-color: rgb(32, 32, 32); */
 }
 
 .flex-center, #box, body {
@@ -47,7 +47,6 @@ body {
 #welcome {
   width: 450px;
   margin-right: 100px;
-  text-align: justify;
 }
 #welcome img {
   display: block;
@@ -64,7 +63,6 @@ body {
 }
 
 #overlay {
-  display: none;
   position: fixed;
   top: 0;
   left: 0;
@@ -72,6 +70,8 @@ body {
   bottom: 0;
   background: rgba(0, 0, 0, 0.5);
   opacity: 0;
+  pointer-events: none;
+  overflow-y: auto;
   transition: opacity 500ms;
   z-index: 1;
 }
@@ -91,18 +91,17 @@ body {
   width: 100%;
   background: #e5ebf7;
   border: none;
-  box-shadow: 1px 1px 3px 2px #aeaeae;
   cursor: pointer;
 }
 #overlay > div span {
   color: #21a0ff;
 }
 
-#installed {
+#installed, #updated {
   width: 400px;
   display: none;
 }
-#installed strong {
+#installed strong, #updated strong {
   display: block;
   font-size: 1.5rem;
   color: lightgreen;
@@ -114,8 +113,40 @@ body {
 }
 #author a {
   display: inline;
-  color: blue;
+  color: #007bff;
   text-align: left;
+}
+#author details {
+  border: 1px solid #aaa;
+  padding: 0.5em 0.5em 0;
+}
+#author details:first-of-type {
+  margin-top: 20px;
+}
+#author details:last-of-type {
+  margin-bottom: 20px;
+}
+#author summary {
+  font-weight: bold;
+  margin: -0.5em -0.5em 0;
+  padding: 0.5em;
+  cursor: pointer;
+}
+#author summary strong {
+  float: right;
+}
+#author details[open] {
+  padding: 0.5em;
+}
+#author details[open] summary {
+  border-bottom: 1px solid #aaa;
+  margin-bottom: 0.5em;
+}
+
+#hint {
+  position: absolute;
+  bottom: 20px;
+  columns: gray;
 }
 
 #secret {

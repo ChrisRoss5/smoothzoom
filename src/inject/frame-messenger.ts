@@ -108,7 +108,7 @@ function run() {
       this.propagateUp({ data: { listener, event } });
     },
     propagateUp({ data, source }: { data: MessageData; source?: WindowProxy }) {
-      if (source && ["onWheel", "onMousemove"].includes(data.listener)) {
+      if (source && /onWheel|onMousemove/.test(data.listener)) {
         if (framePosition.x == -1)
           for (const frame of document.querySelectorAll("frame, iframe"))
             if ((frame as any).contentWindow == source) {

@@ -17,6 +17,11 @@
         effect.
         <button>I understand</button>
       </div>
+      <div id="updated">
+        <strong>SmoothZoom updated!</strong>
+        Check out the great new features and the new look in version 1.1!
+        <button>Sure!</button>
+      </div>
       <div id="author">
         <strong>
           Hi! I'm a solo developer of SmoothZoom browser extension.
@@ -24,39 +29,126 @@
         <hr />
         Here's a list of issues that cannot be solved with current browser
         technology:
-        <ul>
-          <li>
-            <strong>Frame elements (nested browsing contexts).</strong>
-            The extension works even when frames are nested and dynamically
-            created. However, some frames with strict sandbox attribute don't
-            allow content script injection and therefore it is impossible to
-            register any events while cursor is hovering them. For example, this
-            can happen with Google Ads. To zoom towards such element, the only
-            solution is to disable interactivity (option from the popup), zoom
-            anywhere around it to trigger the zoom, and only then zoom inside
-            that element.
-          </li>
-          <li>
-            <strong>Toggling JavaScript.</strong>
-            It is possible to toggle Javascript with
-            <a
-              href="https://developer.chrome.com/docs/extensions/reference/contentSettings/"
-              >Content Settings API</a
-            >. However, it is not possible to do so without reloading the page.
-            Another problem is that the API toggles JavaScript for ALL pages
-            that match the given location origin. DevTools Debugger has the
-            option to toggle JavaScript instantly, per tab, but there is no way
-            to access it programmatically. Zooming with temporarily disabled
-            JavaScript prevents potential content adjusting and could improve
-            performance significantly.
-          </li>
-        </ul>
-        If you found a solution to any of these issues, please contact me:
+        <details>
+          <summary>
+            Elements with fixed position
+            <strong style="color: red">High importance</strong>
+          </summary>
+          When zooming, the root element gets the transform style, and this
+          creates a containing block for absolute and fixed positioned
+          descendants. In order to keep their position on the viewport, they
+          have to position with scroll distance addition to their coordinates.
+          The problem is in locating these elements. One method, that 100%
+          works, is to query all elements in the DOM, call
+          <em>getComputedStyle</em> on each one of them, and get the position
+          property. Of course, this is unacceptably slow because it has to
+          happen moment before the zoom starts. The current method works by
+          reading all document stylesheets, extracting selectors of rules with
+          fixed position, and finally, using only these selectors on the first
+          method. The problem is when a stylesheet is cross-origin, because the
+          CORS error raises when trying to read it.
+          <a
+            href="https://developer.chrome.com/docs/extensions/reference/debugger/"
+            target="_blank"
+            >Debugger API</a
+          >
+          can access all loaded resources, meaning it is possible to locate
+          wanted selectors in CSS strings. After implementing this method, I
+          came to a conclusion that it works perfectly, covering all cases, but
+          I decided not to go with it. Here are the reasons why:
+          <ul>
+            <li>
+              The message
+              <em>"SmoothZoom extension started debugging this browser."</em>
+              appears in a large infobar label that moves the page away from the
+              top of the viewport.
+            </li>
+            <li>
+              The debugger API is not available as optional permission. It also
+              brings up this warning on installation:
+              <em>"Access the page debugger backend."</em>
+            </li>
+            <li>
+              The process of attaching the debugger itself is slow and requires
+              many async calls. There is a noticable difference in waiting time,
+              moment before the zoom starts.
+            </li>
+          </ul>
+        </details>
+        <details>
+          <summary>
+            Sandboxed frame elements<strong style="color: orange"
+              >Medium</strong
+            >
+          </summary>
+          The extension works even when frames are nested and dynamically
+          created. Each frame gets a "messenger" function which propagates
+          registered events up to the top frame. The top frame shares the
+          current zoom state object with all the other frames so that each stays
+          synchronized. However, some frames with strict sandbox attribute don't
+          allow content script injection and therefore it is impossible to
+          register any events while cursor is hovering them. For example, this
+          can happen with Google Ads. To zoom towards such element, the only
+          solution is to disable interactivity (option from the popup), trigger
+          the zoom anywhere around it, and finally zoom inside that element.
+        </details>
+        <details>
+          <summary>
+            Fullscreen problems<strong style="color: orange">Medium</strong>
+          </summary>
+          It is impossible to zoom a fullscreen element. However, I found a
+          workaround — Moment before zoom starts, the extension exits fullscreen
+          and makes the root element go fullscreen instead. This way, the
+          element that was previously in fullscreen can now be zoomed. It
+          becomes temporarily fixed positioned to cover the entire viewport, but
+          because it can be nested, there is another problem. Instead of
+          changing its position in DOM, all its ancestors need to have,
+          temporarily, the highest specificity style which defines values:
+          filter, transform, backdrop-filter, perspective, contain,
+          transform-style, content-visibility, and will-change as none or
+          initial. These are the properties that result in the creation of a
+          containing block for absolute and fixed positioned descendants. The
+          remaning problem is this:
+          <a
+            href="https://stackoverflow.com/questions/71637367/requestfullscreen-not-working-with-modifier-keys-inside-keyup-event"
+            target="_blank"
+            >requestFullscreen() not working with modifier keys inside keyup
+            event</a
+          >, meaning it is impossible to go fullscreen if the zoom activation
+          key is Alt, Ctrl, or Shift. My question on StackOverflow still has
+          zero answers.
+        </details>
+        <details>
+          <summary>
+            Toggling JavaScript<strong style="color: green">Low</strong>
+          </summary>
+          It is possible to toggle Javascript with
+          <a
+            href="https://developer.chrome.com/docs/extensions/reference/contentSettings/"
+            >Content Settings API</a
+          >, and it would be great if this was one of the options in the
+          extension's popup. Zooming with temporarily disabled JavaScript
+          prevents potential content adjusting and could improve performance
+          significantly. However, toggling Javascript is not possible without
+          reloading the page. Another problem is that the API toggles JavaScript
+          for <em>all</em> pages that match the given location origin. On top of
+          that, this API requires a permission with possibly the scarriest user
+          warning:
+          <em
+            >"Change your settings that control websites' access to features
+            such as cookies, JavaScript, plugins, geolocation, microphone,
+            camera etc."</em
+          >. DevTools Debugger has the option to toggle JavaScript instantly,
+          per tab, but there is no way to access it programmatically.
+        </details>
+        This text was last updated on April 11, 2022. If you found a solution to
+        any of these issues, please contact me:
         <a href="mailto:kristijan.ros@gmail.com">kristijan.ros@gmail.com</a>
         <button>Close</button>
       </div>
     </div>
 
+    <div id="hint">Zoom out to find a secret button</div>
     <div id="secret">Secret Button! (click me)</div>
 
     <div id="box">

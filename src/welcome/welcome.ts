@@ -3,14 +3,15 @@ const secretEl = document.querySelector("#secret") as HTMLElement;
 const authorEl = document.querySelector("#author") as HTMLElement;
 const closeAuthorEl = authorEl.querySelector("button") as HTMLElement;
 
-if (location.hash == "#installed") showWelcome();
+if (/#installed|#updated/.test(location.hash)) showWelcome();
+
 secretEl.onclick = stopZoom;
-showAuthor();
 
 function showWelcome() {
-  //todo location.hash = "";
-  const installedEl = overlayEl.querySelector("#installed") as HTMLElement;
+  const installedEl = overlayEl.querySelector(location.hash) as HTMLElement;
   const closeWelcomeEl = installedEl.querySelector("button") as HTMLElement;
+  location.hash = "";
+  authorEl.style.display = "none";
   installedEl.style.display = "block";
   showOverlay().then(() => {
     installedEl.style.opacity = "1";
@@ -18,9 +19,11 @@ function showWelcome() {
     closeWelcomeEl.onclick = () => {
       installedEl.remove();
       hideOverlay();
+      setTimeout(() => (authorEl.style.display = "block"), 500);
     };
   });
 }
+
 function stopZoom() {
   window.addEventListener("zoom-stopped", showAuthor, { once: true });
   window.dispatchEvent(new Event("stop-zoom"));
@@ -34,13 +37,12 @@ function showAuthor() {
 }
 function showOverlay() {
   return new Promise((resolve) => {
-    overlayEl.style.display = "block";
-    overlayEl.offsetWidth; // NOSONAR
     overlayEl.style.opacity = "1";
+    overlayEl.style.pointerEvents = "auto";
     setTimeout(resolve, 250);
   });
 }
 function hideOverlay() {
-  overlayEl.style.opacity = "0";
-  overlayEl.style.display = "none";
+  setTimeout(() => authorEl.removeAttribute("style"), 500);
+  overlayEl.removeAttribute("style");
 }

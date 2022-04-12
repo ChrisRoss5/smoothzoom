@@ -13,7 +13,7 @@ body {
   @extend .flex-center;
   overflow: hidden;
   min-height: 100vh;
-  background-color: rgb(32, 32, 32);
+  /* background-color: rgb(32, 32, 32); */
 }
 .flex-center {
   display: flex;
@@ -51,7 +51,6 @@ body {
 #welcome {
   width: 450px;
   margin-right: 100px;
-  text-align: justify;
   img {
     display: block;
     margin: 10px auto 5px; /* 20px auto 10px; */
@@ -65,7 +64,6 @@ body {
   box-shadow: 1px 1px 3px 2px #aeaeae;
 }
 #overlay {
-  display: none;
   position: fixed;
   top: 0;
   left: 0;
@@ -73,6 +71,8 @@ body {
   bottom: 0;
   background: rgba(0, 0, 0, 0.5);
   opacity: 0;
+  pointer-events: none;
+  overflow-y: auto;
   transition: opacity 500ms;
   z-index: 1;
   & > div {
@@ -90,7 +90,6 @@ body {
       width: 100%;
       background: #e5ebf7;
       border: none;
-      box-shadow: 1px 1px 3px 2px #aeaeae;
       cursor: pointer;
     }
     span {
@@ -98,7 +97,7 @@ body {
     }
   }
 }
-#installed {
+#installed, #updated {
   width: 400px;
   display: none;
   strong {
@@ -112,9 +111,40 @@ body {
   width: 800px;
   a {
     display: inline;
-    color: blue;
+    color: rgb(0, 123, 255);
     text-align: left;
   }
+  details {
+    border: 1px solid #aaa;
+    padding: 0.5em 0.5em 0;
+    &:first-of-type {
+      margin-top: 20px;
+    }
+    &:last-of-type {
+      margin-bottom: 20px;
+    }
+  }
+  summary {
+    font-weight: bold;
+    margin: -0.5em -0.5em 0;
+    padding: 0.5em;
+    cursor: pointer;
+    strong {
+      float: right;
+    }
+  }
+  details[open] {
+    padding: 0.5em;
+  }
+  details[open] summary {
+    border-bottom: 1px solid #aaa;
+    margin-bottom: 0.5em;
+  }
+}
+#hint {
+  position: absolute;
+  bottom: 20px;
+  columns: gray;
 }
 #secret {
   position: absolute;

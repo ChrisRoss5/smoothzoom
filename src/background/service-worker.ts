@@ -1,30 +1,88 @@
-chrome.runtime.onInstalled.addListener((details) => {
-  if (details.reason == chrome.runtime.OnInstalledReason.INSTALL) {
-    chrome.runtime.setUninstallURL("https://forms.gle/w4wf7qwWE3ZkavhD7");
-    chrome.tabs.create({ url: "../welcome/welcome.html#installed" });
-  }
-});
+interface Request {
+  message: string;
+  details?: { enable: boolean; primaryPattern: string };
+}
 
-chrome.runtime.onMessage.addListener(
-  (request: { message: string; details: any }, sender, sendResponse) => {
-    //
+const listeners = {
+  onInstalled(details: chrome.runtime.InstalledDetails) {
+    if (details.reason == chrome.runtime.OnInstalledReason.INSTALL) {
+      chrome.runtime.setUninstallURL("https://forms.gle/w4wf7qwWE3ZkavhD7");
+      chrome.tabs.create({ url: "../welcome/welcome.html#installed" });
+    } else if (details.reason == chrome.runtime.OnInstalledReason.UPDATE) {
+      const previousVersion = details.previousVersion;
+      const newVersion: string = chrome.runtime.getManifest().version;
+      if (previousVersion != newVersion)
+        chrome.tabs.create({ url: "../welcome/welcome.html#updated" });
+    }
+  },
+  onMessage(
+    request: Request,
+    sender: chrome.runtime.MessageSender,
+    _sendResponse: typeof sendResponse
+  ) {
+    sendResponse = _sendResponse;
     if (request.message == "TAKE_SCREENSHOT")
       /* https://developer.chrome.com/docs/extensions/reference/tabs/#method-captureVisibleTab */
-      chrome.tabs.captureVisibleTab(-2, { quality: 100 }, sendResponse);
-    //
-    else if (request.message == "TOGGLE_JAVASCRIPT") {
+      chrome.tabs.captureVisibleTab(-2, { quality: 100 }, _sendResponse);
+    else if (request.message == "TOGGLE_JAVASCRIPT")
       /* https://developer.chrome.com/docs/extensions/reference/contentSettings/#property-javascript */
-      if (request.details.enable) {
-        chrome.contentSettings.javascript.clear({}, sendResponse);
-      } else {
-        const setDetails = {
-          primaryPattern: request.details.primaryPattern,
-          setting: "block",
-        } as chrome.contentSettings.JavascriptSetDetails;
-        chrome.contentSettings.javascript.set(setDetails, sendResponse);
-      }
-    }
-
+      control.toggleJavascript(request);
+    else if (request.message == "GET_FIXED_ELEMENT_SELECTORS")
+      /* https://developer.chrome.com/docs/extensions/reference/debugger/ */
+      control.getFixedElements(sender);
     return true;
-  }
-);
+  },
+};
+const control = {
+  getFixedElements(sender: chrome.runtime.MessageSender) {
+    /* https://stackoverflow.com/a/63822633/10264782 */
+    const debuggee: chrome.debugger.Debuggee = { tabId: sender.tab?.id };
+    chrome.debugger.attach(debuggee, "1.3", async () => {
+      const send = (method: string, params?: Object): any =>
+        new Promise((resolve) =>
+          chrome.debugger.sendCommand(debuggee, method, params, resolve)
+        );
+      await send("Page.enable");
+      const { frameTree } = await send("Page.getResourceTree");
+      const { resources, frame: { id: frameId } } = frameTree; // prettier-ignore
+      const selectors: string[] = [];
+      for (const { type, mimeType, url } of resources) {
+        if (!(type == "Stylesheet" || mimeType == "text/css")) continue;
+        const params = { frameId, url };
+        const { content } = await send("Page.getResourceContent", params);
+        if (!content) continue;
+        selectors.push(...utils.findSelectors(content));
+      }
+      chrome.debugger.detach(debuggee);
+      sendResponse(selectors);
+    });
+  },
+  toggleJavascript(request: Request) {
+    if (request.details!.enable) {
+      chrome.contentSettings.javascript.clear({}, sendResponse);
+    } else {
+      const setDetails = {
+        primaryPattern: request.details!.primaryPattern,
+        setting: "block",
+      } as chrome.contentSettings.JavascriptSetDetails;
+      chrome.contentSettings.javascript.set(setDetails, sendResponse);
+    }
+  },
+};
+const utils = {
+  findSelectors(content: string) {
+    return [...content.matchAll(/position\s*:\s*fixed/g)].map(({ index }) => {
+      const openingBracketIdx = content.lastIndexOf("{", index);
+      let startingIdx = openingBracketIdx;
+      while (startingIdx) if (/[{}/;]/.test(content[--startingIdx])) break;
+      startingIdx = startingIdx ? startingIdx + 1 : 0;
+      return content.substring(startingIdx, openingBracketIdx).trim();
+    });
+  },
+};
+
+/* Listeners Registration */
+
+let sendResponse: (response?: any) => void;
+chrome.runtime.onInstalled.addListener(listeners.onInstalled);
+chrome.runtime.onMessage.addListener(listeners.onMessage);
