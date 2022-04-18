@@ -9,9 +9,9 @@ const listeners = {
       chrome.runtime.setUninstallURL("https://forms.gle/w4wf7qwWE3ZkavhD7");
       chrome.tabs.create({ url: "../welcome/welcome.html#installed" });
     } else if (details.reason == chrome.runtime.OnInstalledReason.UPDATE) {
-      const previousVersion = details.previousVersion;
-      const newVersion: string = chrome.runtime.getManifest().version;
-      if (previousVersion != newVersion)
+      const previousVersion = details.previousVersion || "";
+      // const newVersion: string = chrome.runtime.getManifest().version;
+      if (utils.cmpVersions(previousVersion, "1.1") < 0)
         chrome.tabs.create({ url: "../welcome/welcome.html#updated" });
     }
   },
@@ -71,13 +71,28 @@ const control = {
 };
 const utils = {
   findSelectors(content: string) {
-    return [...content.matchAll(/position\s*:\s*fixed/g)].map(({ index }) => {
-      const openingBracketIdx = content.lastIndexOf("{", index);
-      let startingIdx = openingBracketIdx;
-      while (startingIdx) if (/[{}/;]/.test(content[--startingIdx])) break;
-      startingIdx = startingIdx ? startingIdx + 1 : 0;
-      return content.substring(startingIdx, openingBracketIdx).trim();
-    });
+    return [...(content as any).matchAll(/position\s*:\s*fixed/g)].map(
+      ({ index }) => {
+        const openingBracketIdx = content.lastIndexOf("{", index);
+        let startingIdx = openingBracketIdx;
+        while (startingIdx) if (/[{}/;]/.test(content[--startingIdx])) break;
+        startingIdx = startingIdx ? startingIdx + 1 : 0;
+        return content.substring(startingIdx, openingBracketIdx).trim();
+      }
+    );
+  },
+  cmpVersions(a: string, b: string) {
+    /* Return values:
+      - a number < 0 if a < b
+      - a number > 0 if a > b
+      - 0 if a = b */
+    const segmentsA = a.replace(/(\.0+)+$/, "").split(".");
+    const segmentsB = b.replace(/(\.0+)+$/, "").split(".");
+    for (let i = 0; i < Math.min(segmentsA.length, segmentsB.length); i++) {
+      const diff = parseInt(segmentsA[i], 10) - parseInt(segmentsB[i], 10);
+      if (diff) return diff;
+    }
+    return segmentsA.length - segmentsB.length;
   },
 };
 

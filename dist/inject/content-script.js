@@ -92,9 +92,8 @@
             helpers.setStyleProperty("--zoom-left", html.scrollLeft + "px");
         },
         onStopZoom() {
-            isDoubleClick = true;
             control
-                .exitZoom()
+                .exitZoom(true)
                 .then(() => window.dispatchEvent(new Event("zoom-stopped")));
         },
         onMessage({ data, source }) {
@@ -190,7 +189,7 @@
             const started = !zoomLevel;
             const zoomType = -Math.sign(e.deltaY);
             const strength = zoomType * helpers.getStrength(storage.strength);
-            const divisor = zoomLevel + strength < 0 ? 10 : 1;
+            const divisor = zoomLevel < 0 || (!zoomLevel && zoomType == -1) ? 10 : 1;
             zoomLevel = Math.max(-0.9, zoomLevel + strength / divisor);
             this.transformOrigin(e, zoomType, started);
             helpers.setStyleProperty("transform", `scale(${1 + zoomLevel})`);
@@ -220,10 +219,11 @@
             helpers.setStyleProperty("transition", zoomType ? transition : "none");
             helpers.setStyleProperty("transform-origin", `${x}px ${y}px`);
         },
-        async exitZoom() {
+        async exitZoom(force) {
             if (state.isExitingZoom)
                 return;
-            if (!isDoubleClick && (!storage.holdToZoom || inFullscreenZoom)) {
+            const cancel = !isDoubleClick && (!storage.holdToZoom || inFullscreenZoom);
+            if (cancel && !force) {
                 isDoubleClick = true;
                 return;
             }
@@ -271,6 +271,12 @@
                 chrome.runtime.sendMessage(request, (dataUrl) => {
                     const img = document.createElement("img");
                     helpers.setTargetEl(html.appendChild(img));
+                    img.onerror = () => {
+                        resolve(void 0);
+                        alert("Taking screenshots has been disabled by your browser.\n\n" +
+                            "Change your browser settings or disable the 'Use screenshot' option from the SmoothZoom popup.");
+                        control.exitZoom(true);
+                    };
                     img.onload = resolve;
                     img.src = dataUrl;
                 });

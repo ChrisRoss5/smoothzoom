@@ -89,6 +89,7 @@ body {
 }
 #popup {
   box-shadow: 1px 1px 3px 2px #aeaeae;
+  z-index: 1;
 }
 #overlay {
   position: fixed;
@@ -101,7 +102,7 @@ body {
   pointer-events: none;
   overflow-y: auto;
   transition: opacity 500ms;
-  z-index: 1;
+  z-index: 99;
   & > div {
     margin: 50px auto;
     background: white;
