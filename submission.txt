@@ -1,0 +1,9 @@
+https://support.google.com/chrome_webstore/contact/one_stop_support
+
+What is the purpose of your extension? Describe the value it provides to Chrome users. *
+Zooming into websites or documents such as png or mp4, without changing the page layout. Simple, fast, configurable.
+How should your extension be used? Provide examples of main use cases. *
+You see a funny-looking profile picture and want to zoom into it as easy as possible -- I'd say this would be the primary use case. Totally different than the built-in browser zoom, and with many options, it can have lots of use cases. Especially useful for reading small texts without changing the page layout. Great for content creators. I believe it has massive potential.
+
+An extension can only be considered for self-nomination review once every 6 months.
+Date submitted: 20.4.2022
