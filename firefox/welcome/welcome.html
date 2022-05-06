@@ -1,0 +1,322 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="stylesheet" href="../popup/popup.css" />
+    <link rel="stylesheet" href="../inject/style.css" />
+    <link rel="stylesheet" href="welcome.css" />
+    <title>SmoothZoom</title>
+  </head>
+  <body>
+    <div id="overlay">
+      <div id="installed">
+        <strong>SmoothZoom installed!</strong>
+        <blockquote>
+          <p>
+            The smoothest page zoom on the internet<br />
+            ⁠— Highly customizable with many features!<br /><br />Simply
+            position the cursor and use the mouse wheel to zoom in/out at the
+            desired location. You can compare this extension to pinch-to-zoom
+            functionality on touch screens, or a Windows Magnifier.
+            <br /><br />Many touchpads support pinch-to-zoom in a way that they
+            trigger the built-in page zoom. You can intercept this action if you
+            change the zoom activation key from "RClick" to "Ctrl". This way,
+            you don't need a mouse wheel to use SmoothZoom!
+          </p>
+        </blockquote>
+        <br />
+        Refresh currently open tabs for changes to take effect.
+        <button>I understand</button>
+      </div>
+      <div id="updated">
+        <strong>SmoothZoom updated!</strong>
+        Check out the great new features and the new look in version 1.1.1!
+        <button>Sure!</button>
+      </div>
+      <div id="author">
+        <strong>
+          Hi! I'm a solo developer of SmoothZoom browser extension.
+        </strong>
+        <hr />
+        Here's a list of issues that cannot be solved with current browser
+        technology:
+        <details>
+          <summary>
+            Elements with fixed position
+            <strong style="color: red">High importance</strong>
+          </summary>
+          When zooming, the root element gets the transform style and
+          consequently creates a containing block for absolute and fixed
+          positioned descendants. To preserve their position on the viewport,
+          they have to position with scroll distances added to their coordinates.
+          The problem is in locating these elements. One method, that 100%
+          works, is to query all elements in the DOM, call
+          <em>getComputedStyle</em> on each one of them and get the position
+          property. Of course, this is unacceptably slow because it has to
+          happen the moment before the zoom starts. The current method works by
+          reading all document stylesheets, extracting selectors of rules with a
+          fixed position, and finally, using only these selectors on the first
+          method. The problem is when a stylesheet is cross-origin because the
+          CORS error raises when trying to read it.
+          <a
+            href="https://developer.chrome.com/docs/extensions/reference/debugger/"
+            target="_blank"
+            >Debugger API</a
+          >
+          can access all loaded resources, which implies it is possible to
+          locate wanted selectors in CSS strings. After implementing this
+          method, I concluded that it works in all cases, but I decided not to
+          go with it. Here are the reasons why:
+          <ul>
+            <li>
+              The message
+              <em>"SmoothZoom extension started debugging this browser."</em>
+              appears in a large infobar label that moves the page away from the
+              top of the viewport.
+            </li>
+            <li>
+              The debugger API is not available as optional permission. It also
+              brings up this warning on installation:
+              <em>"Access the page debugger backend."</em>
+            </li>
+            <li>
+              The process of attaching the debugger itself is slow and requires
+              many async calls. There is a noticeable difference in waiting
+              time, the moment before the zoom starts.
+            </li>
+          </ul>
+        </details>
+        <details>
+          <summary>
+            Sandboxed frame elements<strong style="color: orange"
+              >Medium</strong
+            >
+          </summary>
+          The extension works even when frames are nested and dynamically
+          created. Each frame gets a "messenger" function which propagates
+          registered events up to the top frame. The top frame shares the
+          current zoom state object with all the other frames so that each stays
+          synchronized. However, some frames with strict sandbox attribute don't
+          allow content script injection and therefore it is impossible to
+          register any events while the cursor is hovering over them. For
+          example, this can happen with Google Ads. To zoom towards an element
+          like this, the only solution is to disable interactivity (option from
+          the popup), trigger the zoom anywhere around it, and finally zoom
+          inside that element.
+        </details>
+        <details>
+          <summary>
+            Fullscreen problems<strong style="color: orange">Medium</strong>
+          </summary>
+          It is impossible to zoom a fullscreen element. However, I found a
+          workaround — The moment before zoom starts, the extension exits
+          fullscreen and makes the root element go fullscreen instead. This way,
+          the element that was previously in fullscreen is now zoomable. It
+          becomes temporarily fixed positioned to cover the entire viewport,
+          which leads to another problem if it is nested. Instead of changing
+          its position in DOM, all its ancestors temporarily need to have the
+          highest specificity style that defines values: filter, transform,
+          backdrop-filter, perspective, contain, transform-style,
+          content-visibility, and will-change as none or initial. These are the
+          properties that result in the creation of a containing block for
+          absolute and fixed positioned descendants. Lastly, to request
+          fullscreen on an element, the user must interact twice because each
+          call on
+          <em>requestFullscreen</em> "eats" the user's event, which explains why
+          the "Hold to zoom" option from the popup appears disabled. The
+          remaining problem is:
+          <a
+            href="https://stackoverflow.com/questions/71637367/requestfullscreen-not-working-with-modifier-keys-inside-keyup-event"
+            target="_blank"
+            >requestFullscreen() not working with modifier keys inside keyup
+            event</a
+          >, meaning it is impossible to go fullscreen if the zoom activation
+          key is Alt, Ctrl, or Shift. My question on StackOverflow still has
+          zero answers.
+        </details>
+        <details>
+          <summary>
+            Toggling JavaScript<strong style="color: green">Low</strong>
+          </summary>
+          It is possible to toggle Javascript with
+          <a
+            href="https://developer.chrome.com/docs/extensions/reference/contentSettings/"
+            >Content Settings API</a
+          >, and it would be great if this was one of the options in the
+          extension's popup. Zooming with temporarily disabled JavaScript
+          prevents potential content adjusting and could improve performance
+          significantly. However, toggling Javascript is not possible without
+          reloading the page. Another problem is that the API toggles JavaScript
+          for <em>all</em> pages that match the given location origin. On top of
+          that, this API requires permission with possibly the scariest user
+          warning:
+          <em
+            >"Change your settings that control websites' access to features
+            such as cookies, JavaScript, plugins, geolocation, microphone,
+            camera etc."</em
+          >. DevTools Debugger has the option to toggle JavaScript instantly,
+          per tab, but there is no way to access it programmatically.
+        </details>
+        This text was last updated on April 12, 2022. If you found a solution to
+        any of these issues, please contact me:
+        <a href="mailto:kristijan.ros@gmail.com">kristijan.ros@gmail.com</a>
+        <button>Close</button>
+      </div>
+    </div>
+
+    <div id="hint">Zoom out to find the Secret Button</div>
+    <div id="secret">Secret Button! (click me)</div>
+
+    <div id="box">
+      <div id="more-info">More info</div>
+
+      <div id="welcome-container">
+        <div id="welcome">
+          Welcome to SmoothZoom test page!
+          <br /><br />
+          You can access this page anytime by clicking on the SmoothZoom title
+          from the popup. Next to this text is the identical version of the
+          popup, which can be accessed by clicking on the extension icon:
+          <img src="../img/icon-128.png" />
+          Use it to find settings that suit you best. They automatically sync to
+          your browser account.
+          <br />
+          For low-end PCs or heavy websites, try making these changes in the
+          following order:
+          <ul>
+            <li>Uncheck <span>Always follow cursor</span></li>
+            <li>Check <span>Disable interactivity</span></li>
+            <!-- <li>Check <span>Disable JavaScript</span></li> -->
+            <li>Reduce <span>Smoothness</span> to 0ms</li>
+            <li>Check <span>Use screenshot</span></li>
+          </ul>
+          Start by experiencing SmoothZoom on this page!
+        </div>
+      </div>
+
+      <div id="popup">
+        <a id="title" class="bright" target="_blank">
+          <img src="../img/smooth-zoom-hq.png" />
+        </a>
+
+        <div id="content">
+          <div id="keys">
+            <label>
+              <input tabindex="-1" type="radio" name="key" key="rightClick" />
+              RClick
+            </label>
+            <label>
+              <input tabindex="-1" type="radio" name="key" key="altKey" />
+              Alt
+            </label>
+            <label>
+              <input tabindex="-1" type="radio" name="key" key="ctrlKey" />
+              Ctrl
+            </label>
+            <label>
+              <input tabindex="-1" type="radio" name="key" key="shiftKey" />
+              Shift
+            </label>
+            <div class="info">
+              Choose a key, hold it, and use mousewheel to zoom. Default: Right
+              Mouse Click (RClick)
+            </div>
+          </div>
+
+          <div class="line"></div>
+
+          <div id="options">
+            <label>
+              Hold to zoom:
+              <input tabindex="-1" type="checkbox" key="holdToZoom" />
+              <div class="info">
+                When disabled or in fullscreen video/element, use the chosen key
+                again to exit zoom.
+              </div>
+            </label>
+            <label>
+              Always follow cursor:
+              <input tabindex="-1" type="checkbox" key="alwaysFollowCursor" />
+              <div class="info">
+                Allows a viewport to always follow the mouse cursor while in
+                zoom.
+              </div>
+            </label>
+            <label>
+              Disable interactivity:
+              <input tabindex="-1" type="checkbox" key="disableInteractivity" />
+              <div class="info">
+                Disables website interactivity (CSS pointer-events) while in
+                zoom.
+              </div>
+            </label>
+            <!-- <label>
+            Disable JavaScript:
+            <input tabindex="-1" type="checkbox" key="disableJavascript" />
+            <div class="info">
+              Disables website JavaScript while in zoom.<br />This prevents
+              potential content adjusting.
+            </div>
+          </label> -->
+            <label>
+              Use screenshot:
+              <input tabindex="-1" type="checkbox" key="useScreenshot" />
+              <div class="info">
+                Takes a screenshot of a website, moment before it starts zooming
+                into it.
+              </div>
+            </label>
+          </div>
+
+          <div class="line"></div>
+
+          <label id="strength">
+            <div>Strength:</div>
+            <input
+              tabindex="-1"
+              type="range"
+              min="0"
+              max="1"
+              value="0.5"
+              step="any"
+              key="strength"
+            />
+            <div class="info">
+              Current multiplier:
+              <div id="strength-value">1.00</div>
+              Minimum: 1.25 Maximum: 5
+            </div>
+          </label>
+          <label id="transition">
+            <div>Smoothness:</div>
+            <input
+              tabindex="-1"
+              type="range"
+              min="0"
+              max="400"
+              value="200"
+              step="any"
+              key="transition"
+            />
+            <div class="info">
+              Current duration:
+              <div id="transition-value">200ms</div>
+              Minimum: 0 Maximum: 400
+            </div>
+          </label>
+        </div>
+
+        <a id="review" class="row bright" target="_blank">
+          <img src="../img/cws-logo.png" />
+          &nbsp;Write a review&nbsp;&nbsp;★★★★★
+        </a>
+      </div>
+    </div>
+
+    <script src="./welcome.js"></script>
+    <script src="../popup/popup.js"></script>
+    <script src="../inject/content-script.js"></script>
+  </body>
+</html>

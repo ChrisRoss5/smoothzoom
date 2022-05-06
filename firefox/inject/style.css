@@ -1,0 +1,43 @@
+/* https://developer.mozilla.org/en-US/docs/Web/CSS/Specificity */
+/* https://specifishity.com/ */
+/* https://developer.mozilla.org/en-US/docs/Web/CSS/position */
+/* https://stackoverflow.com/a/52937920/10264782 */
+/* https://developer.mozilla.org/en-US/docs/Learn/Performance/CSS */
+/* https://stackoverflow.com/questions/63790794/get-css-rules-chrome-extension */
+:root {
+  will-change: width, height, transform-origin !important;
+}
+:root[no-events], :root[no-events] * {
+  pointer-events: none !important;
+}
+:root[in-zoom] {
+  /* iframe {
+    pointer-events: none !important;  // Previous solution
+  } */
+  /*
+    *:not([some-ancestor]) { display: none ;}  // Hide everything else when in fullscreen zoom -- todo feature
+    [some-ancestor] * {display: revert; }
+  */
+}
+:root[in-zoom],
+:root[in-zoom] body {
+  scrollbar-width: none !important;
+  /* Firefox */
+}
+:root[in-zoom]::-webkit-scrollbar,
+:root[in-zoom] body::-webkit-scrollbar {
+  display: none !important;
+  /* Safari and Chrome */
+}
+:root[in-zoom]::before {
+  content: "" !important;
+  position: absolute !important;
+  top: var(--zoom-top) !important;
+  left: var(--zoom-left) !important;
+  width: 100vw !important;
+  height: 100vh !important;
+  outline: 3px solid red !important;
+  z-index: 10000000000000002000 !important;
+  pointer-events: none !important;
+  transition: top 200ms, left 200ms !important;
+}

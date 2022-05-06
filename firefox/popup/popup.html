@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="stylesheet" href="popup.css" />
+    <title>SmoothZoom</title>
+  </head>
+  <body>
+    <div id="popup">
+      <a id="title" class="bright" target="_blank">
+        <img src="../img/smooth-zoom.png" />
+      </a>
+
+      <div id="content">
+        <div id="keys">
+          <label>
+            <input tabindex="-1" type="radio" name="key" key="rightClick" />
+            RClick
+          </label>
+          <label>
+            <input tabindex="-1" type="radio" name="key" key="altKey" />
+            Alt
+          </label>
+          <label>
+            <input tabindex="-1" type="radio" name="key" key="ctrlKey" />
+            Ctrl
+          </label>
+          <label>
+            <input tabindex="-1" type="radio" name="key" key="shiftKey" />
+            Shift
+          </label>
+          <div class="info">
+            Choose a key, hold it, and use mousewheel to zoom. Default: Right
+            Mouse Click (RClick)
+          </div>
+        </div>
+
+        <div class="line"></div>
+
+        <div id="options">
+          <label>
+            Hold to zoom:
+            <input tabindex="-1" type="checkbox" key="holdToZoom" />
+            <div class="info">
+              When disabled or in fullscreen video/element, use the chosen key
+              again to exit zoom.
+            </div>
+          </label>
+          <label>
+            Always follow cursor:
+            <input tabindex="-1" type="checkbox" key="alwaysFollowCursor" />
+            <div class="info">
+              Allows a viewport to always follow the mouse cursor while in
+              zoom.
+            </div>
+          </label>
+          <label>
+            Disable interactivity:
+            <input tabindex="-1" type="checkbox" key="disableInteractivity" />
+            <div class="info">
+              Disables website interactivity (CSS pointer-events) while in
+              zoom.
+            </div>
+          </label>
+          <!-- <label>
+            Disable JavaScript:
+            <input tabindex="-1" type="checkbox" key="disableJavascript" />
+            <div class="info">
+              Disables website JavaScript while in zoom.<br />This prevents
+              potential content adjusting.
+            </div>
+          </label> -->
+          <label>
+            Use screenshot:
+            <input tabindex="-1" type="checkbox" key="useScreenshot" />
+            <div class="info">
+              Takes a screenshot of a website, moment before it starts zooming
+              into it.
+            </div>
+          </label>
+        </div>
+
+        <div class="line"></div>
+
+        <label id="strength">
+          <div>Strength:</div>
+          <input
+            tabindex="-1"
+            type="range"
+            min="0"
+            max="1"
+            value="0.5"
+            step="any"
+            key="strength"
+          />
+          <div class="info">
+            Current multiplier:
+            <div id="strength-value">1.00</div>
+            Minimum: 1.25 Maximum: 5
+          </div>
+        </label>
+        <label id="transition">
+          <div>Smoothness:</div>
+          <input
+            tabindex="-1"
+            type="range"
+            min="0"
+            max="400"
+            value="200"
+            step="any"
+            key="transition"
+          />
+          <div class="info">
+            Current duration:
+            <div id="transition-value">200ms</div>
+            Minimum: 0 Maximum: 400
+          </div>
+        </label>
+      </div>
+
+      <a id="review" class="row bright" target="_blank">
+        <img src="../img/cws-logo.png" />
+        &nbsp;Write a review&nbsp;&nbsp;★★★★★
+      </a>
+    </div>
+
+    <script src="popup.js"></script>
+  </body>
+</html>
