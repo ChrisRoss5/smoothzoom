@@ -4,7 +4,7 @@
   const reviewEl = document.querySelector("#review");
   const strengthValueEl = document.querySelector("#strength-value");
   const transitionValueEl = document.querySelector("#transition-value");
-  titleEl.onclick = () => chrome.tabs.create({ url: "../welcome.html" });
+  titleEl.onclick = () => chrome.tabs.create({ url: "../index.html" });
   reviewEl.href = `https://chrome.google.com/webstore/detail/${chrome.runtime.id}/reviews`;
   /* Storage */
   let storage = {

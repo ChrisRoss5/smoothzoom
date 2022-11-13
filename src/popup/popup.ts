@@ -6,6 +6,7 @@ const webstoreURL = "https://chrome.google.com/webstore/detail/" + extensionID;
 
 // For presentation at zoom.k1k1.dev
 if (isPresentation) {
+  (document.querySelector("#available") as HTMLElement).style.display = "block";
   (chrome.storage as any) = {
     sync: {
       get: (keys: any, callback: any) => callback({}),
@@ -40,7 +41,7 @@ if (isPresentation) {
   titleEl.onclick = () =>
     isPresentation
       ? location.assign(webstoreURL)
-      : chrome.tabs.create({ url: "../welcome.html" });
+      : chrome.tabs.create({ url: "../index.html" });
   reviewEl.href = webstoreURL + "/reviews";
   for (const inputEl of document.querySelectorAll("input"))
     inputEl.addEventListener("click", inputClicked);
