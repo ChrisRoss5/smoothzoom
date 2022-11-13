@@ -1,11 +1,49 @@
+const isPresentation = !chrome.storage;
+const extensionID = isPresentation
+  ? "nlloamlgdioincflcopfgkbikjgaiihg"
+  : chrome.runtime.id;
+const webstoreURL = "https://chrome.google.com/webstore/detail/" + extensionID;
+
+// For presentation at zoom.k1k1.dev
+if (isPresentation) {
+  (chrome.storage as any) = {
+    sync: {
+      get: (keys: any, callback: any) => callback({}),
+      set: (pair: any) => {
+        for (const listener of (chrome.storage as any).onChanged.listeners)
+          listener({
+            [Object.keys(pair)[0]]: { newValue: Object.values(pair)[0] },
+          });
+      },
+    },
+    onChanged: {
+      listeners: [] as any,
+      addListener(callback: any) {
+        this.listeners.push(callback);
+      },
+    },
+  };
+}
+
 (() => {
+  if (window.matchMedia("(any-hover: none)").matches) {
+    document.body.textContent =
+      "The extension requires a mouse (pointing device).";
+    document.body.style.textAlign = "center";
+    return;
+  }
+
   const titleEl = document.querySelector("#title") as HTMLElement;
   const reviewEl = document.querySelector("#review") as HTMLAnchorElement;
   const strengthValueEl = document.querySelector("#strength-value")!;
   const transitionValueEl = document.querySelector("#transition-value")!;
   titleEl.onclick = () =>
-    chrome.tabs.create({ url: "../welcome/welcome.html" });
-  reviewEl.href = `https://chrome.google.com/webstore/detail/${chrome.runtime.id}/reviews`;
+    isPresentation
+      ? location.assign(webstoreURL)
+      : chrome.tabs.create({ url: "../welcome.html" });
+  reviewEl.href = webstoreURL + "/reviews";
+  for (const inputEl of document.querySelectorAll("input"))
+    inputEl.addEventListener("click", inputClicked);
 
   /* Storage */
 
@@ -47,7 +85,6 @@
         inputEl.value = transition.toString();
         transitionValueEl.textContent = transition + "ms";
       }
-      inputEl.addEventListener("click", inputClicked);
     }
   }
   function inputClicked(this: HTMLInputElement) {
@@ -63,6 +100,10 @@
       chrome.storage.sync.set({ transition });
       transitionValueEl.textContent = transition + "ms";
     } else {
+      if (key == "useScreenshot" && isPresentation) {
+        this.checked = false;
+        return alert("Install the extension to use this feature.");
+      }
       if (key == "disableJavascript") toggleJavascript(this);
       else chrome.storage.sync.set({ [key]: this.checked });
     }

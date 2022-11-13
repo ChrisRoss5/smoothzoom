@@ -23,6 +23,11 @@ body {
 
 /* specific */
 
+#available {
+  display: none;
+  position: absolute;
+  top: 20px;
+}
 #box {
   position: relative;
   @extend .flex-center;
@@ -59,6 +64,11 @@ body {
       width: 450px;
       margin-right: 100px;
     }
+  }
+}
+@media screen and (max-height: 850px) {
+  #box {
+    transform: scale(0.8);
   }
 }
 #more-info {

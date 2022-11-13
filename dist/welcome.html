@@ -4,22 +4,22 @@
     <meta charset="UTF-8" />
     <meta http-equiv="X-UA-Compatible" content="IE=edge" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <link rel="stylesheet" href="../popup/popup.css" />
-    <link rel="stylesheet" href="../inject/style.css" />
-    <link rel="stylesheet" href="welcome.css" />
+    <link rel="stylesheet" href="popup/popup.css" />
+    <link rel="stylesheet" href="inject/style.css" />
+    <link rel="stylesheet" href="welcome/welcome.css" />
+    <link rel="shortcut icon" href="img/icon-48.png" type="image/x-icon">
     <title>SmoothZoom</title>
   </head>
   <body>
     <div id="overlay">
       <div id="installed">
-        <strong>SmoothZoom installed!</strong>
+        <strong>SmoothZoom – Quick Page Zoom installed!</strong>
         <blockquote>
           <p>
-            The smoothest page zoom on the internet<br />
-            ⁠— Highly customizable with many features!<br /><br />Simply
-            position the cursor and use the mouse wheel to zoom in/out at the
-            desired location. You can compare this extension to pinch-to-zoom
-            functionality on touch screens, or a Windows Magnifier.
+            Simply position the cursor and use the mouse wheel to zoom in/out at
+            the desired location. You can compare this extension to
+            pinch-to-zoom functionality on touch screens, or a Windows
+            Magnifier.
             <br /><br />Many touchpads support pinch-to-zoom in a way that they
             trigger the built-in page zoom. You can intercept this action if you
             change the zoom activation key from "RClick" to "Ctrl". This way,
@@ -50,9 +50,9 @@
           When zooming, the root element gets the transform style and
           consequently creates a containing block for absolute and fixed
           positioned descendants. To preserve their position on the viewport,
-          they have to position with scroll distances added to their coordinates.
-          The problem is in locating these elements. One method, that 100%
-          works, is to query all elements in the DOM, call
+          they have to position with scroll distances added to their
+          coordinates. The problem is in locating these elements. One method,
+          that 100% works, is to query all elements in the DOM, call
           <em>getComputedStyle</em> on each one of them and get the position
           property. Of course, this is unacceptably slow because it has to
           happen the moment before the zoom starts. The current method works by
@@ -169,6 +169,13 @@
     <div id="hint">Zoom out to find the Secret Button</div>
     <div id="secret">Secret Button! (click me)</div>
 
+    <a
+      id="available"
+      class="box"
+      href="https://chrome.google.com/webstore/detail/nlloamlgdioincflcopfgkbikjgaiihg"
+    >
+      <img src="img/available.png" />
+    </a>
     <div id="box">
       <div id="more-info">More info</div>
 
@@ -179,7 +186,7 @@
           You can access this page anytime by clicking on the SmoothZoom title
           from the popup. Next to this text is the identical version of the
           popup, which can be accessed by clicking on the extension icon:
-          <img src="../img/icon-128.png" />
+          <img src="img/icon-128.png" />
           Use it to find settings that suit you best. They automatically sync to
           your browser account.
           <br />
@@ -198,7 +205,7 @@
 
       <div id="popup">
         <a id="title" class="bright" target="_blank">
-          <img src="../img/smooth-zoom-hq.png" />
+          <img src="img/smooth-zoom-hq.png" />
         </a>
 
         <div id="content">
@@ -309,14 +316,14 @@
         </div>
 
         <a id="review" class="row bright" target="_blank">
-          <img src="../img/cws-logo.png" />
+          <img src="img/cws-logo.png" />
           &nbsp;Write a review&nbsp;&nbsp;★★★★★
         </a>
       </div>
     </div>
 
-    <script src="./welcome.js"></script>
-    <script src="../popup/popup.js"></script>
-    <script src="../inject/content-script.js"></script>
+    <script src="welcome/welcome.js"></script>
+    <script src="popup/popup.js"></script>
+    <script src="inject/content-script.js"></script>
   </body>
 </html>

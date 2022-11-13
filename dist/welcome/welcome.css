@@ -21,6 +21,12 @@ body {
 }
 
 /* specific */
+#available {
+  display: none;
+  position: absolute;
+  top: 20px;
+}
+
 #box {
   position: relative;
   transition: padding 0.5s;
@@ -58,6 +64,11 @@ body {
   margin-right: 100px;
 }
 
+@media screen and (max-height: 850px) {
+  #box {
+    transform: scale(0.8);
+  }
+}
 #more-info {
   position: absolute;
   bottom: 57px;
@@ -80,8 +91,7 @@ body {
 }
 #welcome img {
   display: block;
-  margin: 15px auto;
-  /* 20px auto 10px; */
+  margin: 15px auto; /* 20px auto 10px; */
   width: 50px;
 }
 #welcome span {
@@ -173,7 +183,7 @@ body {
 }
 #author a {
   display: inline;
-  color: #007bff;
+  color: rgb(0, 123, 255);
   text-align: left;
 }
 #author details {

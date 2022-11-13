@@ -7,12 +7,12 @@ const listeners = {
   onInstalled(details: chrome.runtime.InstalledDetails) {
     if (details.reason == chrome.runtime.OnInstalledReason.INSTALL) {
       chrome.runtime.setUninstallURL("https://forms.gle/w4wf7qwWE3ZkavhD7");
-      chrome.tabs.create({ url: "../welcome/welcome.html#installed" });
+      chrome.tabs.create({ url: "../welcome.html#installed" });
     } else if (details.reason == chrome.runtime.OnInstalledReason.UPDATE) {
       const previousVersion = details.previousVersion || "";
       // const newVersion: string = chrome.runtime.getManifest().version;
       if (utils.cmpVersions(previousVersion, "1.1") < 0)
-        chrome.tabs.create({ url: "../welcome/welcome.html#updated" });
+        chrome.tabs.create({ url: "../welcome.html#updated" });
     }
   },
   onMessage(

@@ -10,7 +10,8 @@ moreInfo.onclick = showMoreInfo;
 secretEl.onclick = () => window.dispatchEvent(new Event("stop-zoom"));
 window.addEventListener("zoom-stopped", showAuthor);
 
-if (/#installed|#updated/.test(location.hash)) showWelcome();
+if (location.hash == "#author") showAuthor();
+else if (/#installed|#updated/.test(location.hash)) showWelcome();
 
 function showWelcome() {
   const installedEl = overlayEl.querySelector(location.hash) as HTMLElement;

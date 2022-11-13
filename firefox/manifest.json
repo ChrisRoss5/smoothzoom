@@ -47,8 +47,7 @@
   ],
   "browser_specific_settings": {
     "gecko": {
-      "id": "kristijan.ros@gmail.com",
-      "strict_min_version": "42.0"
+      "id": "kristijan.ros@gmail.com"
     }
   }
 }
