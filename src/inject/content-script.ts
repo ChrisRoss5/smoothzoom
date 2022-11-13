@@ -6,6 +6,7 @@ interface ElementAndStyle {
 }
 
 (() => {
+  if (location.hostname == "zoom.k1k1.dev") return;
   const html = document.documentElement;
   let docStyle: string;
   let targetEl = html;
