@@ -21,15 +21,25 @@ const listeners = {
     _sendResponse: typeof sendResponse
   ) {
     sendResponse = _sendResponse;
-    if (request.message == "TAKE_SCREENSHOT")
-      /* https://developer.chrome.com/docs/extensions/reference/tabs/#method-captureVisibleTab */
-      chrome.tabs.captureVisibleTab(-2, { quality: 100 }, _sendResponse);
-    else if (request.message == "TOGGLE_JAVASCRIPT")
-      /* https://developer.chrome.com/docs/extensions/reference/contentSettings/#property-javascript */
-      control.toggleJavascript(request);
-    else if (request.message == "GET_FIXED_ELEMENT_SELECTORS")
-      /* https://developer.chrome.com/docs/extensions/reference/debugger/ */
-      control.getFixedElements(sender);
+    switch (request.message) {
+      case "TAKE_SCREENSHOT":
+        /* https://developer.chrome.com/docs/extensions/reference/tabs/#method-captureVisibleTab */
+        chrome.tabs.captureVisibleTab(-2, { quality: 100 }, _sendResponse);
+        break;
+      case "TOGGLE_JAVASCRIPT":
+        /* https://developer.chrome.com/docs/extensions/reference/contentSettings/#property-javascript */
+        control.toggleJavascript(request);
+        break;
+      case "GET_FIXED_ELEMENT_SELECTORS":
+        /* https://developer.chrome.com/docs/extensions/reference/debugger/ */
+        control.getFixedElements(sender);
+        break;
+      case "OPEN_WELCOME":
+        chrome.tabs.query({ url: "*://zoom.k1k1.dev/*" }, (tabs) => {
+          chrome.tabs.update(tabs[0].id!, { url: "../index.html" });
+        });
+        break;
+    }
     return true;
   },
 };

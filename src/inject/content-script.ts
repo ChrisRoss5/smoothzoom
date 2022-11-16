@@ -1,12 +1,16 @@
-/* Created with Typescript & SCSS by Kristijan Rosandić */
+/* Author: Kristijan Rosandić */
 
 interface ElementAndStyle {
   el: HTMLElement;
   style: string;
 }
 
+if (window?.chrome?.runtime?.id && location.hostname == "zoom.k1k1.dev") {
+  chrome.runtime.sendMessage({ message: "OPEN_WELCOME" });
+  window.stop();
+}
+
 (() => {
-  if (location.hostname == "zoom.k1k1.dev") return;
   const html = document.documentElement;
   let docStyle: string;
   let targetEl = html;

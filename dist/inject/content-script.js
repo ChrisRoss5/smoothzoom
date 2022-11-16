@@ -1,8 +1,11 @@
 "use strict";
-/* Created with Typescript & SCSS by Kristijan Rosandić */
+/* Author: Kristijan Rosandić */
+var _a, _b;
+if (((_b = (_a = window === null || window === void 0 ? void 0 : window.chrome) === null || _a === void 0 ? void 0 : _a.runtime) === null || _b === void 0 ? void 0 : _b.id) && location.hostname == "zoom.k1k1.dev") {
+    chrome.runtime.sendMessage({ message: "OPEN_WELCOME" });
+    window.stop();
+}
 (() => {
-    if (location.hostname == "zoom.k1k1.dev")
-        return;
     const html = document.documentElement;
     let docStyle;
     let targetEl = html;
