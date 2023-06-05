@@ -60,7 +60,7 @@ body {
 }
 #box.opened #welcome-container {
   opacity: 1;
-  width: 450px;
+  width: 380px;
   margin-right: 100px;
 }
 
@@ -87,7 +87,7 @@ body {
 }
 
 #welcome {
-  width: 450px;
+  width: 380px;
 }
 #welcome img {
   display: block;
@@ -147,7 +147,7 @@ body {
 #updated strong {
   display: block;
   font-size: 1.5rem;
-  color: lightgreen;
+  color: rgb(70, 214, 70);
   margin-bottom: 20px;
 }
 #installed blockquote,

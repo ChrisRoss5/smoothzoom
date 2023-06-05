@@ -21,13 +21,11 @@
 }
 :root[in-zoom],
 :root[in-zoom] body {
-  scrollbar-width: none !important;
-  /* Firefox */
+  scrollbar-width: none !important; /* Firefox */
 }
 :root[in-zoom]::-webkit-scrollbar,
 :root[in-zoom] body::-webkit-scrollbar {
-  display: none !important;
-  /* Safari and Chrome */
+  display: none !important; /* Safari and Chrome */
 }
 :root[in-zoom]::before {
   content: "" !important;
@@ -37,7 +35,7 @@
   width: 100vw !important;
   height: 100vh !important;
   outline: 3px solid red !important;
-  z-index: 10000000000000002000 !important;
+  z-index: 10000000000000000000 !important;
   pointer-events: none !important;
   transition: top 200ms, left 200ms !important;
 }

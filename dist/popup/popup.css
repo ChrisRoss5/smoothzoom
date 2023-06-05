@@ -90,8 +90,7 @@ label input:not([type=range])::after {
 
 /* specific */
 #popup {
-  width: 356px;
-  /* 369px with more options */
+  width: 356px; /* 369px with more options */
   background-image: url("../img/circles.png");
   background-color: white;
   background-size: cover;

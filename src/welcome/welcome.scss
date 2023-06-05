@@ -61,7 +61,7 @@ body {
     }
     #welcome-container {
       opacity: 1;
-      width: 450px;
+      width: 380px;
       margin-right: 100px;
     }
   }
@@ -87,7 +87,7 @@ body {
   transition: opacity 0.5s 0.7s, width 0.5s 0.4s, margin-right 0.5s 0.4s;
 }
 #welcome {
-  width: 450px;
+  width: 380px;
   img {
     display: block;
     margin: 15px auto; /* 20px auto 10px; */
@@ -142,7 +142,7 @@ body {
   strong {
     display: block;
     font-size: 1.5rem;
-    color: lightgreen;
+    color: rgb(70, 214, 70);
     margin-bottom: 20px;
   }
   blockquote {
